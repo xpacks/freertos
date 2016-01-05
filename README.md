@@ -5,7 +5,7 @@ includes a selection of the FreeRTOS files.
 
 ## Version
 
-* V8.0.1
+* V8.2.0
 
 ## Documentation
 
@@ -16,7 +16,7 @@ http://www.freertos.org/a00106.html.
 
 The original files are stored in the `originals` branch.
 
-These files were extracted from `FreeRTOSv8.0.1.zip`.
+These files were extracted from `FreeRTOSV8.2.0.zip`.
 
 To save space, only the FreeRTOS folder was preserved and the following folders/files were removed:
 
