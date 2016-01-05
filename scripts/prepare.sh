@@ -12,7 +12,8 @@ IFS=$'\n\t'
 # RELEASE_VERSION="2.6.1"
 # RELEASE_VERSION="3.2.4"
 # RELEASE_VERSION="4.8.0"
-RELEASE_VERSION="5.4.2"
+# RELEASE_VERSION="5.4.2"
+RELEASE_VERSION="6.1.1"
 
 RELEASE_ID="V${RELEASE_VERSION}"
 FOLDER_PREFIX=""
@@ -55,6 +56,8 @@ find . -name '*.exe' -exec rm -v \{} \;
 
 # FOLDER=""
 FOLDER="FreeRTOS/"
+
+mv FreeRTOSV* FreeRTOS 
 
 # mv FreeRTOSV*/FreeRTOS .
 # rm -rf FreeRTOSV* 
