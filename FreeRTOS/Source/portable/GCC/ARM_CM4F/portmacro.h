@@ -126,6 +126,7 @@ extern void vPortClearInterruptMask( unsigned long ulNewMaskValue );
 #define portENABLE_INTERRUPTS()					vPortClearInterruptMask(0)
 #define portENTER_CRITICAL()					vPortEnterCritical()
 #define portEXIT_CRITICAL()						vPortExitCritical()
+
 /*-----------------------------------------------------------*/
 
 /* Task function macros as described on the FreeRTOS.org WEB site.  These are
