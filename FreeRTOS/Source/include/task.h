@@ -1,5 +1,5 @@
 /*
-	FreeRTOS V2.4.2 - Copyright (C) 2003, 2004 Richard Barry.
+	FreeRTOS V2.6.1 - Copyright (C) 2003 - 2005 Richard Barry.
 
 	This file is part of the FreeRTOS distribution.
 
@@ -60,15 +60,6 @@ typedef void * xTaskHandle;
  * <HR>
  */
 #define tskIDLE_PRIORITY			( ( unsigned portCHAR ) 0 )
-
-/*
- * The maximum number of characters a task name can take.  This includes
- * the terminating null as a character. 
- *
- * \ingroup TaskUtils
- * <HR>
- */
-#define tskMAX_TASK_NAME_LEN		 ( 16 )
 
 /**
  * task. h
@@ -256,18 +247,21 @@ void vTaskDelete( xTaskHandle pxTask );
  *
  * Delay a task for a given number of ticks.  The actual time that the 
  * task remains blocked depends on the tick rate.  The constant
- * portTICKS_PER_MS can be used to calculate real time from the tick 
+ * portTICK_RATE_MS can be used to calculate real time from the tick 
  * rate - with the resolution of one tick period.
+ *
+ * INCLUDE_vTaskDelay must be defined as 1 for this function to be available.
+ * See the configuration section for more information.
  *
  * @param xTicksToDelay The amount of time, in tick periods, that
  * the calling task should block.
  *
  * Example usage:
    <pre>
- // Perform an action every 10 ticks.
+ // Wait 10 ticks before performing an action.
  // NOTE:
  // This is for demonstration only and would be better achieved 
- // using a semaphore which is "given" every 10 ticks.
+ // using vTaskDelayUntil().
  void vTaskFunction( void * pvParameters )
  {
  portTickType xDelay, xNextTime;
@@ -295,6 +289,65 @@ void vTaskDelete( xTaskHandle pxTask );
  * \ingroup TaskCtrl
  */
 void vTaskDelay( portTickType xTicksToDelay );
+
+/**
+ * task. h
+ * <pre>void vTaskDelayUntil( portTickType *pxPreviousWakeTime, portTickType xTimeIncrement );</pre>
+ *
+ * INCLUDE_vTaskDelayUntil must be defined as 1 for this function to be available.
+ * See the configuration section for more information.
+ *
+ * Delay a task until a specified time.  This function can be used by cyclical
+ * tasks to ensure a constant execution frequency.
+ *
+ * This function differs from vTaskDelay() in one important aspect:  vTaskDelay() will
+ * cause a task to block for the specified number of ticks from the time vTaskDelay() is
+ * called.  It is therefore difficult to use vTaskDelay() by itself to generate a fixed
+ * execution frequency as the time between a task starting to execute and that task
+ * calling vTaskDelay() may not be fixed [the task may take a different path though the
+ * code between calls, or may get interrupted or preempted a different number of times
+ * each time it executes].
+ *
+ * Whereas vTaskDelay() specifies a wake time relative to the time at which the function 
+ * is called, vTaskDelayUntil() specifies the absolute (exact) time at which it wishes to 
+ * unblock.
+ * 
+ * The constant portTICK_RATE_MS can be used to calculate real time from the tick 
+ * rate - with the resolution of one tick period.
+ *
+ * @param pxPreviousWakeTime Pointer to a variable that holds the time at which the
+ * task was last unblocked.  The variable must be initialised with the current time
+ * prior to its first use (see the example below).  Following this the variable is 
+ * automatically updated within vTaskDelayUntil().
+ *
+ * @param xTimeIncrement The cycle time period.  The task will be unblocked at 
+ * time *pxPreviousWakeTime + xTimeIncrement.  Calling vTaskDelayUntil with the
+ * same xTimeIncrement parameter value will cause the task to execute with
+ * a fixed interface period.
+ *
+ * Example usage:
+   <pre>
+ // Perform an action every 10 ticks.
+ void vTaskFunction( void * pvParameters )
+ {
+ portTickType xLastWakeTime;
+ const portTickType xFrequency = 10;
+
+     // Initialise the xLastWakeTime variable with the current time.
+	 xLastWakeTime = xTaskGetTickCount();
+     for( ;; )
+     {
+         // Wait for the next cycle.
+		 vTaskDelayUntil( &xLastWakeTime, xFrequency );
+
+         // Perform action here.
+     }
+ }
+   </pre>
+ * \defgroup vTaskDelayUntil vTaskDelayUntil
+ * \ingroup TaskCtrl
+ */
+void vTaskDelayUntil( portTickType *pxPreviousWakeTime, portTickType xTimeIncrement );
 
 /**
  * task. h
@@ -814,7 +867,7 @@ inline void vTaskIncrementTick( void );
  *
  * @param xTicksToWait The maximum amount of time that the task should wait
  * for the event to occur.  This is specified in kernel ticks,the constant 
- * portTICKS_PER_MS can be used to convert kernel ticks into a real time
+ * portTICK_RATE_MS can be used to convert kernel ticks into a real time
  * period.
  */
 void vTaskPlaceOnEventList( xList *pxEventList, portTickType xTicksToWait );
