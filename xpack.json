@@ -1,0 +1,63 @@
+{
+	"$schema": "http://xcdl.github.io/schemas/xpack-1-1.json",
+	"name": "ilg-freertos",
+	"title": "FreeRTOS",
+	"description": "An xPack with a selection of ARM related FreeRTOS files.",
+	"xcdlFile": ".xcdl.json",
+	"repository": 
+	{
+		"type": "git",
+		"url": "https://github.com/xpacks/freertos.git",
+		"archive": "https://github.com/xpacks/freertos/archive/xpack.zip"
+	},
+
+	"version": "0.1.1",
+	"releases": [
+		
+	],
+
+	"keywords": [
+		"rtos",
+		"arm",
+		"embedded"
+	],
+
+	"homepage": "https://github.com/xpacks/freertos",
+	"support": [
+		{
+			"description": "all issues",
+			"url": "https://github.com/xpacks/freertos/issues"
+		}
+	],
+
+	"license": "LicenseRef-LICENSE.txt",
+	"maintainers": [
+		{
+			"name": "Liviu Ionescu",
+			"email": "ilg@livius.net",
+			"url": "http://liviusdotnet.worldpress.com"
+		}
+	],
+
+	"contributors": [
+		{
+			"name": "Richard Barry"
+		},
+
+		{
+			"name": "Lix Paulian",
+			"email": "lix@paulian.net",
+			"url": "https://github.com/lixpaulian"
+		},
+
+		{
+			"name": "Liviu Ionescu",
+			"email": "ilg@livius.net",
+			"url": "http://liviusdotnet.worldpress.com"
+		}
+	],
+
+	"dependencies": [
+		
+	]
+}

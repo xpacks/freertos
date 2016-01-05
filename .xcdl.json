@@ -1,0 +1,5 @@
+{
+	"$schema": "http://xcdl.github.io/schemas/xcdl-1-1.json",
+	"name": "/ilg/portable/freertos",
+	"description": "ARM FreeRTOS code."
+}
