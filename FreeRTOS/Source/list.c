@@ -1,5 +1,5 @@
 /*
-	FreeRTOS V2.6.1 - Copyright (C) 2003 - 2005 Richard Barry.
+	FreeRTOS V3.2.4 - Copyright (C) 2003-2005 Richard Barry.
 
 	This file is part of the FreeRTOS distribution.
 
@@ -19,13 +19,13 @@
 
 	A special exception to the GPL can be applied should you wish to distribute
 	a combined work that includes FreeRTOS, without being obliged to provide
-	the source code for any proprietary components.  See the licensing section 
+	the source code for any proprietary components.  See the licensing section
 	of http://www.FreeRTOS.org for full details of how and when the exception
 	can be applied.
 
 	***************************************************************************
-	See http://www.FreeRTOS.org for documentation, latest information, license 
-	and contact details.  Please ensure to read the configuration and relevant 
+	See http://www.FreeRTOS.org for documentation, latest information, license
+	and contact details.  Please ensure to read the configuration and relevant
 	port sections of the online documentation.
 	***************************************************************************
 */
@@ -34,13 +34,13 @@
 Changes from V1.2.0
 
 	+ Removed the volatile modifier from the function parameters.  This was
-	  only ever included to prevent compiler warnings.  Now warnings are 
+	  only ever included to prevent compiler warnings.  Now warnings are
 	  removed by casting parameters where the calls are made.
 
 	+ prvListGetOwnerOfNextEntry() and prvListGetOwnerOfHeadEntry() have been
 	  removed from the c file and added as macros to the h file.
 
-	+ usNumberOfItems has been added to the list structure.  This removes the
+	+ uxNumberOfItems has been added to the list structure.  This removes the
 	  need for a pointer comparison when checking if a list is empty, and so
 	  is slightly faster.
 
@@ -51,11 +51,18 @@ Changes from V1.2.0
 Changes from V2.0.0
 
 	+ Double linked the lists to allow faster removal item removal.
+
+Changes from V2.6.1
+
+	+ Make use of the new portBASE_TYPE definition where ever appropriate.
+
+Changes from V3.0.0
+
+	+ API changes as described on the FreeRTOS.org WEB site.
 */
 
 #include <stdlib.h>
-#include "projdefs.h"
-#include "portable.h"
+#include "FreeRTOS.h"
 #include "list.h"
 
 /*-----------------------------------------------------------
@@ -64,7 +71,7 @@ Changes from V2.0.0
 
 void vListInitialise( xList *pxList )
 {
-	/* The list structure contains a list item which is used to mark the 
+	/* The list structure contains a list item which is used to mark the
 	end of the list.  To initialise the list the list end is inserted
 	as the only list entry. */
 	pxList->pxHead = &( pxList->xListEnd );
@@ -85,7 +92,7 @@ void vListInitialise( xList *pxList )
 	/* Make sure the marker items are not mistaken for being on a list. */
 	vListInitialiseItem( ( xListItem * ) &( pxList->xListEnd ) );
 
-	pxList->usNumberOfItems = ( unsigned portSHORT ) 0;
+	pxList->uxNumberOfItems = 0;
 }
 /*-----------------------------------------------------------*/
 
@@ -100,8 +107,8 @@ void vListInsertEnd( xList *pxList, xListItem *pxNewListItem )
 {
 volatile xListItem * pxIndex;
 
-	/* Insert a new list item into pxList, but rather than sort the list, 
-	makes the new list item the last item to be removed by a call to 
+	/* Insert a new list item into pxList, but rather than sort the list,
+	makes the new list item the last item to be removed by a call to
 	pvListGetOwnerOfNextEntry.  This means it has to be the item pointed to by
 	the pxIndex member. */
 	pxIndex = pxList->pxIndex;
@@ -115,7 +122,7 @@ volatile xListItem * pxIndex;
 	/* Remember which list the item is in. */
 	pxNewListItem->pvContainer = ( void * ) pxList;
 
-	( pxList->usNumberOfItems )++;
+	( pxList->uxNumberOfItems )++;
 }
 /*-----------------------------------------------------------*/
 
@@ -130,15 +137,15 @@ register portTickType xValueOfInsertion;
 	/* If the list already contains a list item with the same item value then
 	the new list item should be placed after it.  This ensures that TCB's which
 	are stored in ready lists (all of which have the same ulListItem value)
-	get an equal share of the CPU.  However, if the xItemValue is the same as 
+	get an equal share of the CPU.  However, if the xItemValue is the same as
 	the back marker the iteration loop below will not end.  This means we need
-	to guard against this by checking the value first and modifying the 
+	to guard against this by checking the value first and modifying the
 	algorithm slightly if necessary. */
 	if( xValueOfInsertion == portMAX_DELAY )
 	{
 		for( pxIterator = pxList->pxHead; pxIterator->pxNext->xItemValue < xValueOfInsertion; pxIterator = pxIterator->pxNext )
 		{
-			/* There is nothing to do here, we are just iterating to the 
+			/* There is nothing to do here, we are just iterating to the
 			wanted insertion position. */
 		}
 	}
@@ -146,7 +153,7 @@ register portTickType xValueOfInsertion;
 	{
 		for( pxIterator = pxList->pxHead; pxIterator->pxNext->xItemValue <= xValueOfInsertion; pxIterator = pxIterator->pxNext )
 		{
-			/* There is nothing to do here, we are just iterating to the 
+			/* There is nothing to do here, we are just iterating to the
 			wanted insertion position. */
 		}
 	}
@@ -160,7 +167,7 @@ register portTickType xValueOfInsertion;
 	item later. */
 	pxNewListItem->pvContainer = ( void * ) pxList;
 
-	( pxList->usNumberOfItems )++;
+	( pxList->uxNumberOfItems )++;
 }
 /*-----------------------------------------------------------*/
 
@@ -182,7 +189,7 @@ xList * pxList;
 	}
 
 	pxItemToRemove->pvContainer = NULL;
-	( pxList->usNumberOfItems )--;
+	( pxList->uxNumberOfItems )--;
 }
 /*-----------------------------------------------------------*/
 
