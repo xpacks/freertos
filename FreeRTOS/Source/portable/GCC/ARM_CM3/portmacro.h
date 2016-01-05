@@ -47,12 +47,6 @@
 	licensing and training services.
 */
 
-/*
-Changes from V1.2.3
-
-	+ portCPU_CLOSK_HZ definition changed to 8MHz base 10, previously it 
-	  base 16.
-*/
 
 #ifndef PORTMACRO_H
 #define PORTMACRO_H
@@ -76,9 +70,9 @@ extern "C" {
 #define portFLOAT		float
 #define portDOUBLE		double
 #define portLONG		long
-#define portSHORT		int
-#define portSTACK_TYPE	unsigned portCHAR
-#define portBASE_TYPE	char
+#define portSHORT		short
+#define portSTACK_TYPE	unsigned portLONG
+#define portBASE_TYPE	long
 
 #if( configUSE_16_BIT_TICKS == 1 )
 	typedef unsigned portSHORT portTickType;
@@ -89,33 +83,63 @@ extern "C" {
 #endif
 /*-----------------------------------------------------------*/	
 
-/* Critical section management. */
-#define portENTER_CRITICAL()		asm volatile ( "in		__tmp_reg__, __SREG__" :: );	\
-									asm volatile ( "cli" :: );								\
-									asm volatile ( "push	__tmp_reg__" :: )
-
-#define portEXIT_CRITICAL()			asm volatile ( "pop		__tmp_reg__" :: );				\
-									asm volatile ( "out		__SREG__, __tmp_reg__" :: )
-
-#define portDISABLE_INTERRUPTS()	asm volatile ( "cli" :: );
-#define portENABLE_INTERRUPTS()		asm volatile ( "sei" :: );
-/*-----------------------------------------------------------*/
-
 /* Architecture specifics. */
 #define portSTACK_GROWTH			( -1 )
 #define portTICK_RATE_MS			( ( portTickType ) 1000 / configTICK_RATE_HZ )		
-#define portBYTE_ALIGNMENT			1
-#define portNOP()					asm volatile ( "nop" );
+#define portBYTE_ALIGNMENT			4
+/*-----------------------------------------------------------*/	
+
+
+/* Scheduler utilities. */
+extern void vPortYieldFromISR( void );
+
+#define portYIELD()					vPortYieldFromISR()
+
+#define portEND_SWITCHING_ISR( xSwitchRequired ) if( xSwitchRequired ) vPortYieldFromISR()
 /*-----------------------------------------------------------*/
 
-/* Kernel utilities. */
-extern void vPortYield( void ) __attribute__ ( ( naked ) );
-#define portYIELD()					vPortYield()
+
+/* Critical section management. */
+
+#define vPortSetInterruptMask()							\
+	__asm volatile										\
+	(													\
+		"	push { r0 }								\n"	\
+		"	ldr r0, =ulKernelPriority 				\n"	\
+		"	ldr r0, [r0]							\n"	\
+		"	msr basepri, r0							\n" \
+		"	pop { r0 }								"	\
+	)
+	
+/*-----------------------------------------------------------*/
+
+#define vPortClearInterruptMask()						\
+	__asm volatile										\
+	(													\
+		"	push { r0 }								\n"	\
+		"	mov r0, #0								\n"	\
+		"	msr basepri, r0							\n"	\
+		"	pop	 { r0 }								"	\
+	)
+
+/*-----------------------------------------------------------*/
+
+
+extern void vPortEnterCritical( void );
+extern void vPortExitCritical( void );
+
+#define portDISABLE_INTERRUPTS()	vPortSetInterruptMask();
+#define portENABLE_INTERRUPTS()		vPortClearInterruptMask();
+#define portENTER_CRITICAL()		vPortEnterCritical()
+#define portEXIT_CRITICAL()			vPortExitCritical()
 /*-----------------------------------------------------------*/
 
 /* Task function macros as described on the FreeRTOS.org WEB site. */
 #define portTASK_FUNCTION_PROTO( vFunction, pvParameters ) void vFunction( void *pvParameters )
 #define portTASK_FUNCTION( vFunction, pvParameters ) void vFunction( void *pvParameters )
+
+#define inline
+#define portNOP()
 
 #ifdef __cplusplus
 }

@@ -1,44 +1,61 @@
 /*
-	FreeRTOS V3.2.4 - Copyright (C) 2003-2005 Richard Barry.
+	FreeRTOS.org V4.8.0 - Copyright (C) 2003-2008 Richard Barry.
 
-	This file is part of the FreeRTOS distribution.
+	This file is part of the FreeRTOS.org distribution.
 
-	FreeRTOS is free software; you can redistribute it and/or modify
+	FreeRTOS.org is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
 	the Free Software Foundation; either version 2 of the License, or
 	(at your option) any later version.
 
-	FreeRTOS is distributed in the hope that it will be useful,
+	FreeRTOS.org is distributed in the hope that it will be useful,
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with FreeRTOS; if not, write to the Free Software
+	along with FreeRTOS.org; if not, write to the Free Software
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	A special exception to the GPL can be applied should you wish to distribute
-	a combined work that includes FreeRTOS, without being obliged to provide
-	the source code for any proprietary components.  See the licensing section 
+	a combined work that includes FreeRTOS.org, without being obliged to provide
+	the source code for any proprietary components.  See the licensing section
 	of http://www.FreeRTOS.org for full details of how and when the exception
 	can be applied.
 
-	***************************************************************************
-	See http://www.FreeRTOS.org for documentation, latest information, license 
-	and contact details.  Please ensure to read the configuration and relevant 
-	port sections of the online documentation.
-	***************************************************************************
+    ***************************************************************************
+    ***************************************************************************
+    *                                                                         *
+    * SAVE TIME AND MONEY!  We can port FreeRTOS.org to your own hardware,    *
+    * and even write all or part of your application on your behalf.          *
+    * See http://www.OpenRTOS.com for details of the services we provide to   *
+    * expedite your project.                                                  *
+    *                                                                         *
+    ***************************************************************************
+    ***************************************************************************
+
+	Please ensure to read the configuration and relevant port sections of the
+	online documentation.
+
+	http://www.FreeRTOS.org - Documentation, latest information, license and 
+	contact details.
+
+	http://www.SafeRTOS.com - A version that is certified for use in safety 
+	critical systems.
+
+	http://www.OpenRTOS.com - Commercial support, development, porting, 
+	licensing and training services.
 */
 
 /*
  * This is the list implementation used by the scheduler.  While it is tailored
- * heavily for the schedulers needs, it is also available for use by 
- * application code.  
+ * heavily for the schedulers needs, it is also available for use by
+ * application code.
  *
  * xLists can only store pointers to xListItems.  Each xListItem contains a
- * numeric value (xItemValue).  Most of the time the lists are sorted in 
+ * numeric value (xItemValue).  Most of the time the lists are sorted in
  * descending item value order.
- * 
+ *
  * Lists are created already containing one list item.  The value of this
  * item is the maximum possible that can be stored, it is therefore always at
  * the end of the list and acts as a marker.  The list member pxHead always
@@ -49,19 +66,28 @@
  * In addition to it's value, each list item contains a pointer to the next
  * item in the list (pxNext), a pointer to the list it is in (pxContainer)
  * and a pointer to back to the object that contains it.  These later two
- * pointers are included for efficiency of list manipulation.  There is 
- * effectively a two way link between the object containing the list item and 
+ * pointers are included for efficiency of list manipulation.  There is
+ * effectively a two way link between the object containing the list item and
  * the list item itself.
- *  
- *  
+ *
+ *
  * \page ListIntroduction List Implementation
  * \ingroup FreeRTOSIntro
  */
 
+/*
+	Changes from V4.3.1
+
+	+ Included local const within listGET_OWNER_OF_NEXT_ENTRY() to assist
+	  compiler with optimisation.  Thanks B.R.
+*/
 
 #ifndef LIST_H
 #define LIST_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /*
  * Definition of the only type of object that a list can contain.
  */
@@ -75,15 +101,22 @@ struct xLIST_ITEM
 };
 typedef struct xLIST_ITEM xListItem;		/* For some reason lint wants this as two separate definitions. */
 
+struct xMINI_LIST_ITEM
+{
+	portTickType xItemValue;
+	volatile struct xLIST_ITEM *pxNext;
+	volatile struct xLIST_ITEM *pxPrevious;
+};
+typedef struct xMINI_LIST_ITEM xMiniListItem;
+
 /*
  * Definition of the type of queue used by the scheduler.
  */
 typedef struct xLIST
 {
-	unsigned portBASE_TYPE uxNumberOfItems;
-	volatile xListItem * pxHead;			/*< Pointer to the xListEnd item.  xListEnd contains a wrap back pointer to true list head. */
+	volatile unsigned portBASE_TYPE uxNumberOfItems;
 	volatile xListItem * pxIndex;			/*< Used to walk through the list.  Points to the last item returned by a call to pvListGetOwnerOfNextEntry (). */
-	volatile xListItem xListEnd;			/*< List item that contains the maximum possible item value meaning it is always at the end of the list and is therefore used as a marker. */
+	volatile xMiniListItem xListEnd;		/*< List item that contains the maximum possible item value meaning it is always at the end of the list and is therefore used as a marker. */
 } xList;
 
 /*
@@ -93,7 +126,7 @@ typedef struct xLIST
  * \page listSET_LIST_ITEM_OWNER listSET_LIST_ITEM_OWNER
  * \ingroup LinkedList
  */
-#define listSET_LIST_ITEM_OWNER( pxListItem, pxOwner )		{ ( pxListItem )->pvOwner = ( void * ) pxOwner; }
+#define listSET_LIST_ITEM_OWNER( pxListItem, pxOwner )		( pxListItem )->pvOwner = ( void * ) pxOwner
 
 /*
  * Access macro to set the value of the list item.  In most cases the value is
@@ -102,10 +135,10 @@ typedef struct xLIST
  * \page listSET_LIST_ITEM_VALUE listSET_LIST_ITEM_VALUE
  * \ingroup LinkedList
  */
-#define listSET_LIST_ITEM_VALUE( pxListItem, xValue )		{ ( pxListItem )->xItemValue = xValue; }
+#define listSET_LIST_ITEM_VALUE( pxListItem, xValue )		( pxListItem )->xItemValue = xValue
 
 /*
- * Access macro the retrieve the value of the list item.  The value can 
+ * Access macro the retrieve the value of the list item.  The value can
  * represent anything - for example a the priority of a task, or the time at
  * which a task should be unblocked.
  *
@@ -131,7 +164,7 @@ typedef struct xLIST
 /*
  * Access function to obtain the owner of the next entry in a list.
  *
- * The list member pxIndex is used to walk through a list.  Calling 
+ * The list member pxIndex is used to walk through a list.  Calling
  * listGET_OWNER_OF_NEXT_ENTRY increments pxIndex to the next item in the list
  * and returns that entries pxOwner parameter.  Using multiple calls to this
  * function it is therefore possible to move through every item contained in
@@ -139,7 +172,7 @@ typedef struct xLIST
  *
  * The pxOwner parameter of a list item is a pointer to the object that owns
  * the list item.  In the scheduler this is normally a task control block.
- * The pxOwner parameter effectively creates a two way link between the list 
+ * The pxOwner parameter effectively creates a two way link between the list
  * item and its owner.
  *
  * @param pxList The list from which the next item owner is to be returned.
@@ -149,16 +182,17 @@ typedef struct xLIST
  */
 #define listGET_OWNER_OF_NEXT_ENTRY( pxTCB, pxList )									\
 {																						\
+xList * const pxConstList = pxList;														\
 	/* Increment the index to the next item and return the item, ensuring */			\
 	/* we don't return the marker used at the end of the list.  */						\
-																						\
-	( pxList )->pxIndex = ( pxList )->pxIndex->pxNext;									\
-	if( ( pxList )->pxIndex == ( pxList )->pxHead )										\
+	( pxConstList )->pxIndex = ( pxConstList )->pxIndex->pxNext;						\
+	if( ( pxConstList )->pxIndex == ( xListItem * ) &( ( pxConstList )->xListEnd ) )	\
 	{																					\
-		( pxList )->pxIndex = ( pxList )->pxIndex->pxNext;								\
+		( pxConstList )->pxIndex = ( pxConstList )->pxIndex->pxNext;					\
 	}																					\
-	pxTCB = ( volatile tskTCB * ) ( pxList )->pxIndex->pvOwner;							\
+	pxTCB = ( pxConstList )->pxIndex->pvOwner;											\
 }
+
 
 /*
  * Access function to obtain the owner of the first entry in a list.  Lists
@@ -176,7 +210,7 @@ typedef struct xLIST
  * \page listGET_OWNER_OF_HEAD_ENTRY listGET_OWNER_OF_HEAD_ENTRY
  * \ingroup LinkedList
  */
-#define listGET_OWNER_OF_HEAD_ENTRY( pxList )  ( ( pxList->uxNumberOfItems != ( unsigned portBASE_TYPE ) 0 ) ? ( pxList->pxHead->pxNext->pvOwner ) : ( NULL ) )
+#define listGET_OWNER_OF_HEAD_ENTRY( pxList )  ( ( pxList->uxNumberOfItems != ( unsigned portBASE_TYPE ) 0 ) ? ( (&( pxList->xListEnd ))->pxNext->pvOwner ) : ( NULL ) )
 
 /*
  * Check to see if a list item is within a list.  The list item maintains a
@@ -231,7 +265,7 @@ void vListInsert( xList *pxList, xListItem *pxNewListItem );
  * such that it will be the last item within the list returned by multiple
  * calls to listGET_OWNER_OF_NEXT_ENTRY.
  *
- * The list member pvIndex is used to walk through a list.  Calling 
+ * The list member pvIndex is used to walk through a list.  Calling
  * listGET_OWNER_OF_NEXT_ENTRY increments pvIndex to the next item in the list.
  * Placing an item in a list using vListInsertEnd effectively places the item
  * in the list position pointed to by pvIndex.  This means that every other
@@ -259,7 +293,9 @@ void vListInsertEnd( xList *pxList, xListItem *pxNewListItem );
  */
 void vListRemove( xListItem *pxItemToRemove );
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
