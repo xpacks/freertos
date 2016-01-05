@@ -75,23 +75,23 @@
 #include "task.h"
 
 #ifndef configINTERRUPT_CONTROLLER_BASE_ADDRESS
-	#error configINTERRUPT_CONTROLLER_BASE_ADDRESS must be defined.  See http://www.freertos.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
+	#error configINTERRUPT_CONTROLLER_BASE_ADDRESS must be defined.  Refer to Cortex-A equivalent: http://www.freertos.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
 #endif
 
 #ifndef configINTERRUPT_CONTROLLER_CPU_INTERFACE_OFFSET
-	#error configINTERRUPT_CONTROLLER_CPU_INTERFACE_OFFSET must be defined.  See http://www.freertos.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
+	#error configINTERRUPT_CONTROLLER_CPU_INTERFACE_OFFSET must be defined.  Refer to Cortex-A equivalent: http://www.freertos.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
 #endif
 
 #ifndef configUNIQUE_INTERRUPT_PRIORITIES
-	#error configUNIQUE_INTERRUPT_PRIORITIES must be defined.  See http://www.freertos.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
+	#error configUNIQUE_INTERRUPT_PRIORITIES must be defined.  Refer to Cortex-A equivalent: http://www.freertos.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
 #endif
 
 #ifndef configSETUP_TICK_INTERRUPT
-	#error configSETUP_TICK_INTERRUPT() must be defined.  See http://www.freertos.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
+	#error configSETUP_TICK_INTERRUPT() must be defined.  Refer to Cortex-A equivalent: http://www.freertos.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
 #endif /* configSETUP_TICK_INTERRUPT */
 
 #ifndef configMAX_API_CALL_INTERRUPT_PRIORITY
-	#error configMAX_API_CALL_INTERRUPT_PRIORITY must be defined.  See http://www.freertos.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
+	#error configMAX_API_CALL_INTERRUPT_PRIORITY must be defined.  Refer to Cortex-A equivalent: http://www.freertos.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
 #endif
 
 #if configMAX_API_CALL_INTERRUPT_PRIORITY == 0
@@ -171,8 +171,8 @@ the CPU itself before modifying certain hardware registers. */
 {																	\
 	portCPU_IRQ_DISABLE();											\
 	portICCPMR_PRIORITY_MASK_REGISTER = portUNMASK_VALUE;			\
-	__asm volatile (	"DSB		\n"								\
-						"ISB		\n" );							\
+	__asm(	"DSB		\n"											\
+			"ISB		\n" );										\
 	portCPU_IRQ_ENABLE();											\
 }
 
@@ -181,7 +181,7 @@ the CPU itself before modifying certain hardware registers. */
 #define portBIT_0_SET								( ( uint8_t ) 0x01 )
 
 /* Let the user override the pre-loading of the initial LR with the address of
-prvTaskExitError() in case it messes up unwinding of the stack in the
+prvTaskExitError() in case is messes up unwinding of the stack in the
 debugger. */
 #ifdef configTASK_RETURN_ADDRESS
 	#define portTASK_RETURN_ADDRESS	configTASK_RETURN_ADDRESS
@@ -213,16 +213,16 @@ volatile uint32_t ulCriticalNesting = 9999UL;
 
 /* Saved as part of the task context.  If ulPortTaskHasFPUContext is non-zero then
 a floating point context must be saved and restored for the task. */
-volatile uint32_t ulPortTaskHasFPUContext = pdFALSE;
+uint32_t ulPortTaskHasFPUContext = pdFALSE;
 
 /* Set to 1 to pend a context switch from an ISR. */
-volatile uint32_t ulPortYieldRequired = pdFALSE;
+uint32_t ulPortYieldRequired = pdFALSE;
 
 /* Counts the interrupt nesting depth.  A context switch is only performed if
 if the nesting depth is 0. */
-volatile uint32_t ulPortInterruptNesting = 0UL;
+uint32_t ulPortInterruptNesting = 0UL;
 
-/* Used in the asm file. */
+/* Used in asm code. */
 __attribute__(( used )) const uint32_t ulICCIAR = portICCIAR_INTERRUPT_ACKNOWLEDGE_REGISTER_ADDRESS;
 __attribute__(( used )) const uint32_t ulICCEOIR = portICCEOIR_END_OF_INTERRUPT_REGISTER_ADDRESS;
 __attribute__(( used )) const uint32_t ulICCPMR	= portICCPMR_PRIORITY_MASK_REGISTER_ADDRESS;
@@ -321,7 +321,7 @@ static void prvTaskExitError( void )
 
 BaseType_t xPortStartScheduler( void )
 {
-uint32_t ulAPSR;
+uint32_t ulAPSR, ulCycles = 8; /* 8 bits per byte. */
 
 	#if( configASSERT_DEFINED == 1 )
 	{
@@ -345,18 +345,25 @@ uint32_t ulAPSR;
 		while( ( ucMaxPriorityValue & portBIT_0_SET ) != portBIT_0_SET )
 		{
 			ucMaxPriorityValue >>= ( uint8_t ) 0x01;
+
+			/* If ulCycles reaches 0 then ucMaxPriorityValue must have been
+			read as 0, indicating a misconfiguration. */
+			ulCycles--;
+			if( ulCycles == 0 )
+			{
+				break;
+			}
 		}
 
 		/* Sanity check configUNIQUE_INTERRUPT_PRIORITIES matches the read
 		value. */
-		configASSERT( ucMaxPriorityValue == portLOWEST_INTERRUPT_PRIORITY );
+//		configASSERT( ucMaxPriorityValue == portLOWEST_INTERRUPT_PRIORITY );
 
 		/* Restore the clobbered interrupt priority register to its original
 		value. */
 		*pucFirstUserPriorityRegister = ulOriginalPriority;
 	}
 	#endif /* conifgASSERT_DEFINED */
-
 
 	/* Only continue if the CPU is not in User mode.  The CPU must be in a
 	Privileged mode for the scheduler to start. */
@@ -537,6 +544,7 @@ uint32_t ulReturn;
 
 		FreeRTOS maintains separate thread and ISR API functions to ensure
 		interrupt entry is as fast and simple as possible. */
+
 		configASSERT( portICCRPR_RUNNING_PRIORITY_REGISTER >= ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT ) );
 
 		/* Priority grouping:  The interrupt controller (GIC) allows the bits
@@ -554,4 +562,6 @@ uint32_t ulReturn;
 
 #endif /* configASSERT_DEFINED */
 /*-----------------------------------------------------------*/
+
+
 
