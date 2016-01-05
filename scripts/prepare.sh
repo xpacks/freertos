@@ -9,13 +9,15 @@ IFS=$'\n\t'
 # 	https://sourceforge.net/projects/freertos/files/FreeRTOS/
 
 # RELEASE_VERSION="2.4.2"
-RELEASE_VERSION="2.6.1"
+# RELEASE_VERSION="2.6.1"
+RELEASE_VERSION="3.2.4"
+
 RELEASE_ID="V${RELEASE_VERSION}"
-# FOLDER_PREFIX=""
-FOLDER_PREFIX="FreeRTOS "
+FOLDER_PREFIX=""
+# FOLDER_PREFIX="FreeRTOS "
 NAME_PREFIX="FreeRTOS"
-RELEASE_NAME="${NAME_PREFIX}v${RELEASE_VERSION}"
-# RELEASE_NAME="${NAME_PREFIX}V${RELEASE_VERSION}"
+# RELEASE_NAME="${NAME_PREFIX}v${RELEASE_VERSION}"
+RELEASE_NAME="${NAME_PREFIX}V${RELEASE_VERSION}"
 ARCHIVE_NAME="${RELEASE_NAME}.zip"
 ARCHIVE_URL="https://sourceforge.net/projects/freertos/files/FreeRTOS/${FOLDER_PREFIX}${RELEASE_ID}/${ARCHIVE_NAME}"
 
@@ -55,8 +57,11 @@ FOLDER="FreeRTOS/"
 # mv FreeRTOSV*/FreeRTOS .
 # rm -rf FreeRTOSV* 
 
+set +e
+rm -rf ${FOLDER}Demo
+set -e
+
 rm -rf \
-${FOLDER}Demo \
 ${FOLDER}TraceCon \
 ${FOLDER}Source/portable/[BCIKoPRSTW]* \
 ${FOLDER}Source/portable/M[PS]* \
