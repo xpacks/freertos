@@ -15,7 +15,7 @@ An xPack with a selection of ARM related FreeRTOS files.
 
 ## Version
 
-* 0.1.1
+* 2.4.2
 
 ## Releases
 
