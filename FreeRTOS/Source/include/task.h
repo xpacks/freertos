@@ -1,33 +1,56 @@
 /*
-	FreeRTOS V3.2.4 - Copyright (C) 2003-2005 Richard Barry.
+	FreeRTOS.org V4.8.0 - Copyright (C) 2003-2008 Richard Barry.
 
-	This file is part of the FreeRTOS distribution.
+	This file is part of the FreeRTOS.org distribution.
 
-	FreeRTOS is free software; you can redistribute it and/or modify
+	FreeRTOS.org is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
 	the Free Software Foundation; either version 2 of the License, or
 	(at your option) any later version.
 
-	FreeRTOS is distributed in the hope that it will be useful,
+	FreeRTOS.org is distributed in the hope that it will be useful,
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with FreeRTOS; if not, write to the Free Software
+	along with FreeRTOS.org; if not, write to the Free Software
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	A special exception to the GPL can be applied should you wish to distribute
-	a combined work that includes FreeRTOS, without being obliged to provide
+	a combined work that includes FreeRTOS.org, without being obliged to provide
 	the source code for any proprietary components.  See the licensing section
 	of http://www.FreeRTOS.org for full details of how and when the exception
 	can be applied.
 
-	***************************************************************************
-	See http://www.FreeRTOS.org for documentation, latest information, license
-	and contact details.  Please ensure to read the configuration and relevant
-	port sections of the online documentation.
-	***************************************************************************
+    ***************************************************************************
+    ***************************************************************************
+    *                                                                         *
+    * SAVE TIME AND MONEY!  We can port FreeRTOS.org to your own hardware,    *
+    * and even write all or part of your application on your behalf.          *
+    * See http://www.OpenRTOS.com for details of the services we provide to   *
+    * expedite your project.                                                  *
+    *                                                                         *
+    ***************************************************************************
+    ***************************************************************************
+
+	Please ensure to read the configuration and relevant port sections of the
+	online documentation.
+
+	http://www.FreeRTOS.org - Documentation, latest information, license and 
+	contact details.
+
+	http://www.SafeRTOS.com - A version that is certified for use in safety 
+	critical systems.
+
+	http://www.OpenRTOS.com - Commercial support, development, porting, 
+	licensing and training services.
+*/
+
+/*
+Changes since V4.3.1:
+
+	+ Added xTaskGetSchedulerState() function.
 */
 
 #ifndef TASK_H
@@ -36,11 +59,14 @@
 #include "portable.h"
 #include "list.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /*-----------------------------------------------------------
  * MACROS AND DEFINITIONS
  *----------------------------------------------------------*/
 
-#define tskKERNEL_VERSION_NUMBER "V3.2.4"
+#define tskKERNEL_VERSION_NUMBER "V4.7.2"
 
 /**
  * task. h
@@ -53,6 +79,15 @@
  * \ingroup Tasks
  */
 typedef void * xTaskHandle;
+
+/*
+ * Used internally only.
+ */
+typedef struct xTIME_OUT
+{
+    portBASE_TYPE xOverflowCount;
+    portTickType  xTimeOnEntering;
+} xTimeOutType;
 
 /*
  * Defines the priority used by the idle task.  This must not be modified.
@@ -119,6 +154,10 @@ typedef void * xTaskHandle;
  */
 #define taskENABLE_INTERRUPTS()		portENABLE_INTERRUPTS()
 
+/* Definitions returned by xTaskGetSchedulerState(). */
+#define taskSCHEDULER_NOT_STARTED	0
+#define taskSCHEDULER_RUNNING		1
+#define taskSCHEDULER_SUSPENDED		2
 
 /*-----------------------------------------------------------
  * TASK CREATION API
@@ -342,7 +381,7 @@ void vTaskDelay( portTickType xTicksToDelay );
  * \defgroup vTaskDelayUntil vTaskDelayUntil
  * \ingroup TaskCtrl
  */
-void vTaskDelayUntil( portTickType *pxPreviousWakeTime, portTickType xTimeIncrement );
+void vTaskDelayUntil( portTickType * const pxPreviousWakeTime, portTickType xTimeIncrement );
 
 /**
  * task. h
@@ -532,6 +571,26 @@ void vTaskSuspend( xTaskHandle pxTaskToSuspend );
  * \ingroup TaskCtrl
  */
 void vTaskResume( xTaskHandle pxTaskToResume );
+
+/**
+ * task. h
+ * <pre>void xTaskResumeFromISR( xTaskHandle pxTaskToResume );</pre>
+ *
+ * INCLUDE_xTaskResumeFromISR must be defined as 1 for this function to be 
+ * available.  See the configuration section for more information.
+ *
+ * An implementation of vTaskResume() that can be called from within an ISR.
+ *
+ * A task that has been suspended by one of more calls to vTaskSuspend ()
+ * will be made available for running again by a single call to
+ * xTaskResumeFromISR ().
+ *
+ * @param pxTaskToResume Handle to the task being readied.
+ *
+ * \defgroup vTaskResumeFromISR vTaskResumeFromISR
+ * \ingroup TaskCtrl
+ */
+portBASE_TYPE xTaskResumeFromISR( xTaskHandle pxTaskToResume );
 
 /*-----------------------------------------------------------
  * SCHEDULER CONTROL
@@ -814,6 +873,25 @@ void vTaskStartTrace( signed portCHAR * pcBuffer, unsigned portLONG ulBufferSize
  */
 unsigned portLONG ulTaskEndTrace( void );
 
+/**
+ * task.h
+ * <PRE>unsigned portBASE_TYPE uxTaskGetStackHighWaterMark( xTaskHandle xTask );</PRE>
+ *
+ * INCLUDE_uxTaskGetStackHighWaterMark must be set to 1 in FreeRTOSConfig.h for
+ * this function to be available.
+ *
+ * Returns the high water mark of the stack associated with xTask.  That is,
+ * the minimum free stack space there has been (in bytes) since the task
+ * started.  The smaller the returned number the closer the task has come
+ * to overflowing its stack.
+ *
+ * @param xTask Handle of the task associated with the stack to be checked.
+ * Set xTask to NULL to check the stack of the calling task.
+ *
+ * @return The smallest amount of free stack space there has been (in bytes)
+ * since the task referenced by xTask was created.
+ */
+unsigned portBASE_TYPE uxTaskGetStackHighWaterMark( xTaskHandle xTask );
 
 /*-----------------------------------------------------------
  * SCHEDULER INTERNALS AVAILABLE FOR PORTING PURPOSES
@@ -852,7 +930,7 @@ inline void vTaskIncrementTick( void );
  * portTICK_RATE_MS can be used to convert kernel ticks into a real time
  * period.
  */
-void vTaskPlaceOnEventList( xList *pxEventList, portTickType xTicksToWait );
+void vTaskPlaceOnEventList( const xList * const pxEventList, portTickType xTicksToWait );
 
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN
@@ -869,7 +947,7 @@ void vTaskPlaceOnEventList( xList *pxEventList, portTickType xTicksToWait );
  * @return pdTRUE if the task being removed has a higher priority than the task
  * making the call, otherwise pdFALSE.
  */
-signed portBASE_TYPE xTaskRemoveFromEventList( const xList *pxEventList );
+signed portBASE_TYPE xTaskRemoveFromEventList( const xList * const pxEventList );
 
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN
@@ -899,7 +977,44 @@ inline void vTaskSwitchContext( void );
  */
 xTaskHandle xTaskGetCurrentTaskHandle( void );
 
+/*
+ * Capture the current time status for future reference.
+ */
+void vTaskSetTimeOutState( xTimeOutType * const pxTimeOut );
 
+/*
+ * Compare the time status now with that previously captured to see if the
+ * timeout has expired.
+ */
+portBASE_TYPE xTaskCheckForTimeOut( xTimeOutType * const pxTimeOut, portTickType * const pxTicksToWait );
+
+/*
+ * Shortcut used by the queue implementation to prevent unnecessary call to
+ * taskYIELD();
+ */
+void vTaskMissedYield( void );
+
+/*
+ * Returns the scheduler state as taskSCHEDULER_RUNNING,
+ * taskSCHEDULER_NOT_STARTED or taskSCHEDULER_SUSPENDED.
+ */
+portBASE_TYPE xTaskGetSchedulerState( void );
+
+/*
+ * Raises the priority of the mutex holder to that of the calling task should
+ * the mutex holder have a priority less than the calling task.
+ */
+void vTaskPriorityInherit( xTaskHandle * const pxMutexHolder );
+
+/*
+ * Set the priority of a task back to its proper priority in the case that it
+ * inherited a higher priority while it was holding a semaphore.
+ */
+void vTaskPriorityDisinherit( xTaskHandle * const pxMutexHolder );
+
+#ifdef __cplusplus
+}
+#endif
 #endif /* TASK_H */
 
 
