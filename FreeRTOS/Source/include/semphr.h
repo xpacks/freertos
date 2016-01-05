@@ -1,51 +1,53 @@
 /*
-	FreeRTOS.org V4.8.0 - Copyright (C) 2003-2008 Richard Barry.
+	FreeRTOS V5.4.2 - Copyright (C) 2009 Real Time Engineers Ltd.
 
-	This file is part of the FreeRTOS.org distribution.
+	This file is part of the FreeRTOS distribution.
 
-	FreeRTOS.org is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
+	FreeRTOS is free software; you can redistribute it and/or modify it	under 
+	the terms of the GNU General Public License (version 2) as published by the 
+	Free Software Foundation and modified by the FreeRTOS exception.
+	**NOTE** The exception to the GPL is included to allow you to distribute a
+	combined work that includes FreeRTOS without being obliged to provide the 
+	source code for proprietary components outside of the FreeRTOS kernel.  
+	Alternative commercial license and support terms are also available upon 
+	request.  See the licensing section of http://www.FreeRTOS.org for full 
+	license details.
 
-	FreeRTOS.org is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
+	FreeRTOS is distributed in the hope that it will be useful,	but WITHOUT
+	ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+	FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+	more details.
 
-	You should have received a copy of the GNU General Public License
-	along with FreeRTOS.org; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+	You should have received a copy of the GNU General Public License along
+	with FreeRTOS; if not, write to the Free Software Foundation, Inc., 59
+	Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 
-	A special exception to the GPL can be applied should you wish to distribute
-	a combined work that includes FreeRTOS.org, without being obliged to provide
-	the source code for any proprietary components.  See the licensing section 
-	of http://www.FreeRTOS.org for full details of how and when the exception
-	can be applied.
 
-    ***************************************************************************
-    ***************************************************************************
-    *                                                                         *
-    * SAVE TIME AND MONEY!  We can port FreeRTOS.org to your own hardware,    *
-    * and even write all or part of your application on your behalf.          *
-    * See http://www.OpenRTOS.com for details of the services we provide to   *
-    * expedite your project.                                                  *
-    *                                                                         *
-    ***************************************************************************
-    ***************************************************************************
+	***************************************************************************
+	*                                                                         *
+	* Looking for a quick start?  Then check out the FreeRTOS eBook!          *
+	* See http://www.FreeRTOS.org/Documentation for details                   *
+	*                                                                         *
+	***************************************************************************
+
+	1 tab == 4 spaces!
 
 	Please ensure to read the configuration and relevant port sections of the
 	online documentation.
 
-	http://www.FreeRTOS.org - Documentation, latest information, license and 
+	http://www.FreeRTOS.org - Documentation, latest information, license and
 	contact details.
 
-	http://www.SafeRTOS.com - A version that is certified for use in safety 
+	http://www.SafeRTOS.com - A version that is certified for use in safety
 	critical systems.
 
-	http://www.OpenRTOS.com - Commercial support, development, porting, 
+	http://www.OpenRTOS.com - Commercial support, development, porting,
 	licensing and training services.
 */
+
+#ifndef INC_FREERTOS_H
+	#error "#include FreeRTOS.h" must appear in source files before "#include semphr.h"
+#endif
 
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
@@ -446,7 +448,7 @@ typedef xQueueHandle xSemaphoreHandle;
  * <pre>
  xSemaphoreGiveFromISR( 
                           xSemaphoreHandle xSemaphore, 
-                          portSHORT sTaskPreviouslyWoken 
+                          portBASE_TYPE *pxHigherPriorityTaskWoken
                       )</pre>
  *
  * <i>Macro</i> to  release a semaphore.  The semaphore must have previously been
@@ -460,15 +462,13 @@ typedef xQueueHandle xSemaphoreHandle;
  * @param xSemaphore A handle to the semaphore being released.  This is the
  * handle returned when the semaphore was created.
  *
- * @param sTaskPreviouslyWoken This is included so an ISR can make multiple calls
- * to xSemaphoreGiveFromISR () from a single interrupt.  The first call
- * should always pass in pdFALSE.  Subsequent calls should pass in
- * the value returned from the previous call.  See the file serial .c in the
- * PC port for a good example of using xSemaphoreGiveFromISR ().
+ * @param pxHigherPriorityTaskWoken xSemaphoreGiveFromISR() will set
+ * *pxHigherPriorityTaskWoken to pdTRUE if giving the semaphore caused a task
+ * to unblock, and the unblocked task has a priority higher than the currently
+ * running task.  If xSemaphoreGiveFromISR() sets this value to pdTRUE then
+ * a context switch should be requested before the interrupt is exited.
  *
- * @return pdTRUE if a task was woken by releasing the semaphore.  This is 
- * used by the ISR to determine if a context switch may be required following
- * the ISR.
+ * @return pdTRUE if the semaphore was successfully given, otherwise errQUEUE_FULL.
  *
  * Example usage:
  <pre>
@@ -503,25 +503,25 @@ typedef xQueueHandle xSemaphoreHandle;
  void vTimerISR( void * pvParameters )
  {
  static unsigned portCHAR ucLocalTickCount = 0;
- static portBASE_TYPE xTaskWoken;
+ static portBASE_TYPE xHigherPriorityTaskWoken;
 
     // A timer tick has occurred.
 
     // ... Do other time functions.
 
     // Is it time for vATask () to run?
-	xTaskWoken = pdFALSE;
+	xHigherPriorityTaskWoken = pdFALSE;
     ucLocalTickCount++;
     if( ucLocalTickCount >= TICKS_TO_WAIT )
     {
         // Unblock the task by releasing the semaphore.
-        xTaskWoken = xSemaphoreGiveFromISR( xSemaphore, xTaskWoken );
+        xSemaphoreGiveFromISR( xSemaphore, &xHigherPriorityTaskWoken );
 
         // Reset the count so we release the semaphore again in 10 ticks time.
         ucLocalTickCount = 0;
     }
 
-    if( xTaskWoken != pdFALSE )
+    if( xHigherPriorityTaskWoken != pdFALSE )
     {
         // We can force a context switch here.  Context switching from an
         // ISR uses port specific syntax.  Check the demo task for your port
@@ -532,7 +532,7 @@ typedef xQueueHandle xSemaphoreHandle;
  * \defgroup xSemaphoreGiveFromISR xSemaphoreGiveFromISR
  * \ingroup Semaphores
  */
-#define xSemaphoreGiveFromISR( xSemaphore, xTaskPreviouslyWoken )			xQueueGenericSendFromISR( ( xQueueHandle ) xSemaphore, NULL, xTaskPreviouslyWoken, queueSEND_TO_BACK )
+#define xSemaphoreGiveFromISR( xSemaphore, pxHigherPriorityTaskWoken )			xQueueGenericSendFromISR( ( xQueueHandle ) xSemaphore, NULL, pxHigherPriorityTaskWoken, queueSEND_TO_BACK )
 
 /**
  * semphr. h
@@ -551,7 +551,7 @@ typedef xQueueHandle xSemaphoreHandle;
  *
  * Mutex type semaphores cannot be used from within interrupt service routines.  
  *
- * See xSemaphoreCreateBinary() for an alternative implementation that can be 
+ * See vSemaphoreCreateBinary() for an alternative implementation that can be 
  * used for pure synchronisation (where one task or interrupt always 'gives' the 
  * semaphore and another always 'takes' the semaphore) and from within interrupt 
  * service routines.
@@ -606,7 +606,7 @@ typedef xQueueHandle xSemaphoreHandle;
  *
  * Mutex type semaphores cannot be used from within interrupt service routines.  
  *
- * See xSemaphoreCreateBinary() for an alternative implementation that can be 
+ * See vSemaphoreCreateBinary() for an alternative implementation that can be 
  * used for pure synchronisation (where one task or interrupt always 'gives' the 
  * semaphore and another always 'takes' the semaphore) and from within interrupt 
  * service routines.
