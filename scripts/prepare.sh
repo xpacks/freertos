@@ -8,10 +8,11 @@ IFS=$'\n\t'
 # Archives can be downloaded from:
 # 	https://sourceforge.net/projects/freertos/files/FreeRTOS/
 
-RELEASE_VERSION="2.4.2"
+# RELEASE_VERSION="2.4.2"
+RELEASE_VERSION="2.6.1"
 RELEASE_ID="V${RELEASE_VERSION}"
-FOLDER_PREFIX=""
-# FOLDER_PREFIX="FreeRTOS "
+# FOLDER_PREFIX=""
+FOLDER_PREFIX="FreeRTOS "
 NAME_PREFIX="FreeRTOS"
 RELEASE_NAME="${NAME_PREFIX}v${RELEASE_VERSION}"
 # RELEASE_NAME="${NAME_PREFIX}V${RELEASE_VERSION}"
@@ -48,8 +49,8 @@ unzip -q "${LOCAL_ARCHIVE_FILE}"
 # For just in case...
 find . -name '*.exe' -exec rm -v \{} \;
 
-FOLDER=""
-# FOLDER="FreeRTOS/"
+# FOLDER=""
+FOLDER="FreeRTOS/"
 
 # mv FreeRTOSV*/FreeRTOS .
 # rm -rf FreeRTOSV* 

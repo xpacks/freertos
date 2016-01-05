@@ -1,5 +1,5 @@
 /*
-	FreeRTOS V2.4.2 - Copyright (C) 2003, 2004 Richard Barry.
+	FreeRTOS V2.6.1 - Copyright (C) 2003 - 2005 Richard Barry.
 
 	This file is part of the FreeRTOS distribution.
 
@@ -53,6 +53,11 @@ Changes from V1.2.3
 #define portTICK_RATE_HZ		( ( portTickType ) 1000 )
 #define portMAX_PRIORITIES		( ( unsigned portCHAR ) 4 )
 #define portMINIMAL_STACK_SIZE	( ( unsigned portSHORT ) 85 )
+#define portTOTAL_HEAP_SIZE		( ( unsigned portSHORT ) ( 1500 ) )
+
+/* The maximum number of characters a task name can take, 
+including the null terminator. */
+#define portMAX_TASK_NAME_LEN		 ( 8 )
 
 /* Set the following definitions to 1 to include the component, or zero
 to exclude the component. */
@@ -63,6 +68,9 @@ to exclude the component. */
 #define INCLUDE_vTaskDelete				1
 #define INCLUDE_vTaskCleanUpResources	0
 #define INCLUDE_vTaskSuspend			0
+#define INCLUDE_vTaskDelayUntil			1
+#define INCLUDE_vTaskDelay				1
+
 
 /* Use/don't use the trace visualisation. */
 #define USE_TRACE_FACILITY				0
@@ -85,6 +93,8 @@ to exclude the component. */
 #define portLONG		long
 #define portSHORT		int
 #define portSTACK_TYPE	unsigned portCHAR
+
+#define portBYTE_ALIGNMENT			1
 
 #if( USE_16_BIT_TICKS == 1 )
 	typedef unsigned portSHORT portTickType;
@@ -113,7 +123,7 @@ to exclude the component. */
 #define portSTACK_GROWTH			( -1 )
 
 /*-----------------------------------------------------------*/
-#define portTICKS_PER_MS			( ( portTickType ) 1000 / portTICK_RATE_HZ )		
+#define portTICK_RATE_MS			( ( portTickType ) 1000 / portTICK_RATE_HZ )		
 
 /*-----------------------------------------------------------*/
 
