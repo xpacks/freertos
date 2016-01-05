@@ -1,51 +1,56 @@
 /*
-	FreeRTOS.org V4.8.0 - Copyright (C) 2003-2008 Richard Barry.
+	FreeRTOS V5.4.2 - Copyright (C) 2009 Real Time Engineers Ltd.
 
-	This file is part of the FreeRTOS.org distribution.
+	This file is part of the FreeRTOS distribution.
 
-	FreeRTOS.org is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
+	FreeRTOS is free software; you can redistribute it and/or modify it	under 
+	the terms of the GNU General Public License (version 2) as published by the 
+	Free Software Foundation and modified by the FreeRTOS exception.
+	**NOTE** The exception to the GPL is included to allow you to distribute a
+	combined work that includes FreeRTOS without being obliged to provide the 
+	source code for proprietary components outside of the FreeRTOS kernel.  
+	Alternative commercial license and support terms are also available upon 
+	request.  See the licensing section of http://www.FreeRTOS.org for full 
+	license details.
 
-	FreeRTOS.org is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
+	FreeRTOS is distributed in the hope that it will be useful,	but WITHOUT
+	ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+	FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+	more details.
 
-	You should have received a copy of the GNU General Public License
-	along with FreeRTOS.org; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+	You should have received a copy of the GNU General Public License along
+	with FreeRTOS; if not, write to the Free Software Foundation, Inc., 59
+	Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 
-	A special exception to the GPL can be applied should you wish to distribute
-	a combined work that includes FreeRTOS.org, without being obliged to provide
-	the source code for any proprietary components.  See the licensing section
-	of http://www.FreeRTOS.org for full details of how and when the exception
-	can be applied.
 
-    ***************************************************************************
-    ***************************************************************************
-    *                                                                         *
-    * SAVE TIME AND MONEY!  We can port FreeRTOS.org to your own hardware,    *
-    * and even write all or part of your application on your behalf.          *
-    * See http://www.OpenRTOS.com for details of the services we provide to   *
-    * expedite your project.                                                  *
-    *                                                                         *
-    ***************************************************************************
-    ***************************************************************************
+	***************************************************************************
+	*                                                                         *
+	* Looking for a quick start?  Then check out the FreeRTOS eBook!          *
+	* See http://www.FreeRTOS.org/Documentation for details                   *
+	*                                                                         *
+	***************************************************************************
+
+	1 tab == 4 spaces!
 
 	Please ensure to read the configuration and relevant port sections of the
 	online documentation.
 
-	http://www.FreeRTOS.org - Documentation, latest information, license and 
+	http://www.FreeRTOS.org - Documentation, latest information, license and
 	contact details.
 
-	http://www.SafeRTOS.com - A version that is certified for use in safety 
+	http://www.SafeRTOS.com - A version that is certified for use in safety
 	critical systems.
 
-	http://www.OpenRTOS.com - Commercial support, development, porting, 
+	http://www.OpenRTOS.com - Commercial support, development, porting,
 	licensing and training services.
 */
+
+#ifndef INC_FREERTOS_H
+	#error "#include FreeRTOS.h" must appear in source files before "#include queue.h"
+#endif
+
+
+
 
 #ifndef QUEUE_H
 #define QUEUE_H
@@ -144,9 +149,9 @@ xQueueHandle xQueueCreate( unsigned portBASE_TYPE uxQueueLength, unsigned portBA
  *
  * @param xTicksToWait The maximum amount of time the task should block
  * waiting for space to become available on the queue, should it already
- * be full.  The call will return immediately if this is set to 0.  The
- * time is defined in tick periods so the constant portTICK_RATE_MS
- * should be used to convert to real time if this is required.
+ * be full.  The call will return immediately if this is set to 0 and the
+ * queue is full.  The time is defined in tick periods so the constant 
+ * portTICK_RATE_MS should be used to convert to real time if this is required.
  *
  * @return pdTRUE if the item was successfully posted, otherwise errQUEUE_FULL.
  *
@@ -226,9 +231,9 @@ xQueueHandle xQueueCreate( unsigned portBASE_TYPE uxQueueLength, unsigned portBA
  *
  * @param xTicksToWait The maximum amount of time the task should block
  * waiting for space to become available on the queue, should it already
- * be full.  The call will return immediately if this is set to 0.  The
- * time is defined in tick periods so the constant portTICK_RATE_MS
- * should be used to convert to real time if this is required.
+ * be full.  The call will return immediately if this is set to 0 and the queue
+ * is full.  The  time is defined in tick periods so the constant 
+ * portTICK_RATE_MS should be used to convert to real time if this is required.
  *
  * @return pdTRUE if the item was successfully posted, otherwise errQUEUE_FULL.
  *
@@ -310,9 +315,9 @@ xQueueHandle xQueueCreate( unsigned portBASE_TYPE uxQueueLength, unsigned portBA
  *
  * @param xTicksToWait The maximum amount of time the task should block
  * waiting for space to become available on the queue, should it already
- * be full.  The call will return immediately if this is set to 0.  The
- * time is defined in tick periods so the constant portTICK_RATE_MS
- * should be used to convert to real time if this is required.
+ * be full.  The call will return immediately if this is set to 0 and the
+ * queue is full.  The time is defined in tick periods so the constant 
+ * portTICK_RATE_MS should be used to convert to real time if this is required.
  *
  * @return pdTRUE if the item was successfully posted, otherwise errQUEUE_FULL.
  *
@@ -394,9 +399,9 @@ xQueueHandle xQueueCreate( unsigned portBASE_TYPE uxQueueLength, unsigned portBA
  *
  * @param xTicksToWait The maximum amount of time the task should block
  * waiting for space to become available on the queue, should it already
- * be full.  The call will return immediately if this is set to 0.  The
- * time is defined in tick periods so the constant portTICK_RATE_MS
- * should be used to convert to real time if this is required.
+ * be full.  The call will return immediately if this is set to 0 and the
+ * queue is full.  The time is defined in tick periods so the constant 
+ * portTICK_RATE_MS should be used to convert to real time if this is required.
  *
  * @param xCopyPosition Can take the value queueSEND_TO_BACK to place the
  * item at the back of the queue, or queueSEND_TO_FRONT to place the item
@@ -485,6 +490,8 @@ signed portBASE_TYPE xQueueGenericSend( xQueueHandle xQueue, const void * const 
  * waiting for an item to receive should the queue be empty at the time
  * of the call.    The time is defined in tick periods so the constant
  * portTICK_RATE_MS should be used to convert to real time if this is required.
+ * xQueuePeek() will return immediately if xTicksToWait is 0 and the queue
+ * is empty.
  *
  * @return pdTRUE if an item was successfully received from the queue,
  * otherwise pdFALSE.
@@ -574,8 +581,10 @@ signed portBASE_TYPE xQueueGenericSend( xQueueHandle xQueue, const void * const 
  *
  * @param xTicksToWait The maximum amount of time the task should block
  * waiting for an item to receive should the queue be empty at the time
- * of the call.    The time is defined in tick periods so the constant
- * portTICK_RATE_MS should be used to convert to real time if this is required.
+ * of the call.    xQueueReceive() will return immediately if xTicksToWait
+ * is zero and the queue is empty.  The time is defined in tick periods so the 
+ * constant portTICK_RATE_MS should be used to convert to real time if this is 
+ * required.
  *
  * @return pdTRUE if an item was successfully received from the queue,
  * otherwise pdFALSE.
@@ -668,6 +677,8 @@ signed portBASE_TYPE xQueueGenericSend( xQueueHandle xQueue, const void * const 
  * waiting for an item to receive should the queue be empty at the time
  * of the call.    The time is defined in tick periods so the constant
  * portTICK_RATE_MS should be used to convert to real time if this is required.
+ * xQueueGenericReceive() will return immediately if the queue is empty and
+ * xTicksToWait is 0.
  *
  * @param xJustPeek When set to true, the item received from the queue is not
  * actually removed from the queue - meaning a subsequent call to
@@ -732,7 +743,7 @@ signed portBASE_TYPE xQueueGenericSend( xQueueHandle xQueue, const void * const 
  * \defgroup xQueueReceive xQueueReceive
  * \ingroup QueueManagement
  */
-signed portBASE_TYPE xQueueGenericReceive( xQueueHandle xQueue, const void * const pvBuffer, portTickType xTicksToWait, portBASE_TYPE xJustPeek );
+signed portBASE_TYPE xQueueGenericReceive( xQueueHandle xQueue, void * const pvBuffer, portTickType xTicksToWait, portBASE_TYPE xJustPeek );
 
 /**
  * queue. h
@@ -769,7 +780,7 @@ void vQueueDelete( xQueueHandle xQueue );
  portBASE_TYPE xQueueSendToFrontFromISR(
                                          xQueueHandle pxQueue,
                                          const void *pvItemToQueue,
-                                         portBASE_TYPE xTaskPreviouslyWoken
+                                         portBASE_TYPE *pxHigherPriorityTaskWoken
                                       );
  </pre>
  *
@@ -789,15 +800,14 @@ void vQueueDelete( xQueueHandle xQueue );
  * queue was created, so this many bytes will be copied from pvItemToQueue
  * into the queue storage area.
  *
- * @param cTaskPreviouslyWoken This is included so an ISR can post onto
- * the same queue multiple times from a single interrupt.  The first call
- * should always pass in pdFALSE.  Subsequent calls should pass in
- * the value returned from the previous call.  See the file serial .c in the
- * PC port for a good example of this mechanism.
+ * @param pxHigherPriorityTaskWoken xQueueSendToFrontFromISR() will set
+ * *pxHigherPriorityTaskWoken to pdTRUE if sending to the queue caused a task
+ * to unblock, and the unblocked task has a priority higher than the currently
+ * running task.  If xQueueSendToFromFromISR() sets this value to pdTRUE then
+ * a context switch should be requested before the interrupt is exited.
  *
- * @return pdTRUE if a task was woken by posting onto the queue.  This is
- * used by the ISR to determine if a context switch may be required following
- * the ISR.
+ * @return pdTRUE if the data was successfully sent to the queue, otherwise
+ * errQUEUE_FULL.
  *
  * Example usage for buffered IO (where the ISR can obtain more than one value
  * per call):
@@ -805,10 +815,10 @@ void vQueueDelete( xQueueHandle xQueue );
  void vBufferISR( void )
  {
  portCHAR cIn;
- portBASE_TYPE xTaskWokenByPost;
+ portBASE_TYPE xHigherPrioritTaskWoken;
 
     // We have not woken a task at the start of the ISR.
-    cTaskWokenByPost = pdFALSE;
+    xHigherPriorityTaskWoken = pdFALSE;
 
     // Loop until the buffer is empty.
     do
@@ -816,19 +826,13 @@ void vQueueDelete( xQueueHandle xQueue );
         // Obtain a byte from the buffer.
         cIn = portINPUT_BYTE( RX_REGISTER_ADDRESS );						
 
-        // Post the byte.  The first time round the loop cTaskWokenByPost
-        // will be pdFALSE.  If the queue send causes a task to wake we do
-        // not want the task to run until we have finished the ISR, so
-        // xQueueSendFromISR does not cause a context switch.  Also we
-        // don't want subsequent posts to wake any other tasks, so we store
-        // the return value back into cTaskWokenByPost so xQueueSendFromISR
-        // knows not to wake any task the next iteration of the loop.
-        xTaskWokenByPost = xQueueSendToFrontFromISR( xRxQueue, &cIn, cTaskWokenByPost );
+        // Post the byte.  
+        xQueueSendToFrontFromISR( xRxQueue, &cIn, &xHigherPriorityTaskWoken );
 
     } while( portINPUT_BYTE( BUFFER_COUNT ) );
 
     // Now the buffer is empty we can switch context if necessary.
-    if( cTaskWokenByPost )
+    if( xHigherPriorityTaskWoken )
     {
         taskYIELD ();
     }
@@ -838,7 +842,7 @@ void vQueueDelete( xQueueHandle xQueue );
  * \defgroup xQueueSendFromISR xQueueSendFromISR
  * \ingroup QueueManagement
  */
-#define xQueueSendToFrontFromISR( pxQueue, pvItemToQueue, xTaskPreviouslyWoken ) xQueueGenericSendFromISR( pxQueue, pvItemToQueue, xTaskPreviouslyWoken, queueSEND_TO_FRONT )
+#define xQueueSendToFrontFromISR( pxQueue, pvItemToQueue, pxHigherPriorityTaskWoken ) xQueueGenericSendFromISR( pxQueue, pvItemToQueue, pxHigherPriorityTaskWoken, queueSEND_TO_FRONT )
 
 
 /**
@@ -847,7 +851,7 @@ void vQueueDelete( xQueueHandle xQueue );
  portBASE_TYPE xQueueSendToBackFromISR(
                                          xQueueHandle pxQueue,
                                          const void *pvItemToQueue,
-                                         portBASE_TYPE xTaskPreviouslyWoken
+                                         portBASE_TYPE *pxHigherPriorityTaskWoken
                                       );
  </pre>
  *
@@ -867,15 +871,14 @@ void vQueueDelete( xQueueHandle xQueue );
  * queue was created, so this many bytes will be copied from pvItemToQueue
  * into the queue storage area.
  *
- * @param cTaskPreviouslyWoken This is included so an ISR can post onto
- * the same queue multiple times from a single interrupt.  The first call
- * should always pass in pdFALSE.  Subsequent calls should pass in
- * the value returned from the previous call.  See the file serial .c in the
- * PC port for a good example of this mechanism.
+ * @param pxHigherPriorityTaskWoken xQueueSendToBackFromISR() will set
+ * *pxHigherPriorityTaskWoken to pdTRUE if sending to the queue caused a task
+ * to unblock, and the unblocked task has a priority higher than the currently
+ * running task.  If xQueueSendToBackFromISR() sets this value to pdTRUE then
+ * a context switch should be requested before the interrupt is exited.
  *
- * @return pdTRUE if a task was woken by posting onto the queue.  This is
- * used by the ISR to determine if a context switch may be required following
- * the ISR.
+ * @return pdTRUE if the data was successfully sent to the queue, otherwise
+ * errQUEUE_FULL.
  *
  * Example usage for buffered IO (where the ISR can obtain more than one value
  * per call):
@@ -883,10 +886,10 @@ void vQueueDelete( xQueueHandle xQueue );
  void vBufferISR( void )
  {
  portCHAR cIn;
- portBASE_TYPE xTaskWokenByPost;
+ portBASE_TYPE xHigherPriorityTaskWoken;
 
     // We have not woken a task at the start of the ISR.
-    cTaskWokenByPost = pdFALSE;
+    xHigherPriorityTaskWoken = pdFALSE;
 
     // Loop until the buffer is empty.
     do
@@ -894,19 +897,13 @@ void vQueueDelete( xQueueHandle xQueue );
         // Obtain a byte from the buffer.
         cIn = portINPUT_BYTE( RX_REGISTER_ADDRESS );						
 
-        // Post the byte.  The first time round the loop cTaskWokenByPost
-        // will be pdFALSE.  If the queue send causes a task to wake we do
-        // not want the task to run until we have finished the ISR, so
-        // xQueueSendFromISR does not cause a context switch.  Also we
-        // don't want subsequent posts to wake any other tasks, so we store
-        // the return value back into cTaskWokenByPost so xQueueSendFromISR
-        // knows not to wake any task the next iteration of the loop.
-        xTaskWokenByPost = xQueueSendToBackFromISR( xRxQueue, &cIn, cTaskWokenByPost );
+        // Post the byte.
+        xQueueSendToBackFromISR( xRxQueue, &cIn, &xHigherPriorityTaskWoken );
 
     } while( portINPUT_BYTE( BUFFER_COUNT ) );
 
     // Now the buffer is empty we can switch context if necessary.
-    if( cTaskWokenByPost )
+    if( xHigherPriorityTaskWoken )
     {
         taskYIELD ();
     }
@@ -916,7 +913,7 @@ void vQueueDelete( xQueueHandle xQueue );
  * \defgroup xQueueSendFromISR xQueueSendFromISR
  * \ingroup QueueManagement
  */
-#define xQueueSendToBackFromISR( pxQueue, pvItemToQueue, xTaskPreviouslyWoken ) xQueueGenericSendFromISR( pxQueue, pvItemToQueue, xTaskPreviouslyWoken, queueSEND_TO_BACK )
+#define xQueueSendToBackFromISR( pxQueue, pvItemToQueue, pxHigherPriorityTaskWoken ) xQueueGenericSendFromISR( pxQueue, pvItemToQueue, pxHigherPriorityTaskWoken, queueSEND_TO_BACK )
 
 /**
  * queue. h
@@ -924,7 +921,7 @@ void vQueueDelete( xQueueHandle xQueue );
  portBASE_TYPE xQueueSendFromISR(
                                      xQueueHandle pxQueue,
                                      const void *pvItemToQueue,
-                                     portBASE_TYPE xTaskPreviouslyWoken
+                                     portBASE_TYPE *pxHigherPriorityTaskWoken
                                 );
  </pre>
  *
@@ -947,15 +944,14 @@ void vQueueDelete( xQueueHandle xQueue );
  * queue was created, so this many bytes will be copied from pvItemToQueue
  * into the queue storage area.
  *
- * @param cTaskPreviouslyWoken This is included so an ISR can post onto
- * the same queue multiple times from a single interrupt.  The first call
- * should always pass in pdFALSE.  Subsequent calls should pass in
- * the value returned from the previous call.  See the file serial .c in the
- * PC port for a good example of this mechanism.
+ * @param pxHigherPriorityTaskWoken xQueueSendFromISR() will set
+ * *pxHigherPriorityTaskWoken to pdTRUE if sending to the queue caused a task
+ * to unblock, and the unblocked task has a priority higher than the currently
+ * running task.  If xQueueSendFromISR() sets this value to pdTRUE then
+ * a context switch should be requested before the interrupt is exited.
  *
- * @return pdTRUE if a task was woken by posting onto the queue.  This is
- * used by the ISR to determine if a context switch may be required following
- * the ISR.
+ * @return pdTRUE if the data was successfully sent to the queue, otherwise
+ * errQUEUE_FULL.
  *
  * Example usage for buffered IO (where the ISR can obtain more than one value
  * per call):
@@ -963,10 +959,10 @@ void vQueueDelete( xQueueHandle xQueue );
  void vBufferISR( void )
  {
  portCHAR cIn;
- portBASE_TYPE xTaskWokenByPost;
+ portBASE_TYPE xHigherPriorityTaskWoken;
 
     // We have not woken a task at the start of the ISR.
-    cTaskWokenByPost = pdFALSE;
+    xHigherPriorityTaskWoken = pdFALSE;
 
     // Loop until the buffer is empty.
     do
@@ -974,21 +970,16 @@ void vQueueDelete( xQueueHandle xQueue );
         // Obtain a byte from the buffer.
         cIn = portINPUT_BYTE( RX_REGISTER_ADDRESS );						
 
-        // Post the byte.  The first time round the loop cTaskWokenByPost
-        // will be pdFALSE.  If the queue send causes a task to wake we do
-        // not want the task to run until we have finished the ISR, so
-        // xQueueSendFromISR does not cause a context switch.  Also we
-        // don't want subsequent posts to wake any other tasks, so we store
-        // the return value back into cTaskWokenByPost so xQueueSendFromISR
-        // knows not to wake any task the next iteration of the loop.
-        xTaskWokenByPost = xQueueSendFromISR( xRxQueue, &cIn, cTaskWokenByPost );
+        // Post the byte.  
+        xQueueSendFromISR( xRxQueue, &cIn, &xHigherPriorityTaskWoken );
 
     } while( portINPUT_BYTE( BUFFER_COUNT ) );
 
     // Now the buffer is empty we can switch context if necessary.
-    if( cTaskWokenByPost )
+    if( xHigherPriorityTaskWoken )
     {
-        taskYIELD ();
+        // Actual macro used here is port specific.
+        taskYIELD_FROM_ISR ();
     }
  }
  </pre>
@@ -996,7 +987,7 @@ void vQueueDelete( xQueueHandle xQueue );
  * \defgroup xQueueSendFromISR xQueueSendFromISR
  * \ingroup QueueManagement
  */
-#define xQueueSendFromISR( pxQueue, pvItemToQueue, xTaskPreviouslyWoken ) xQueueGenericSendFromISR( pxQueue, pvItemToQueue, xTaskPreviouslyWoken, queueSEND_TO_BACK )
+#define xQueueSendFromISR( pxQueue, pvItemToQueue, pxHigherPriorityTaskWoken ) xQueueGenericSendFromISR( pxQueue, pvItemToQueue, pxHigherPriorityTaskWoken, queueSEND_TO_BACK )
 
 /**
  * queue. h
@@ -1004,7 +995,7 @@ void vQueueDelete( xQueueHandle xQueue );
  portBASE_TYPE xQueueGenericSendFromISR(
                                            xQueueHandle pxQueue,
                                            const void *pvItemToQueue,
-                                           portBASE_TYPE xTaskPreviouslyWoken
+                                           portBASE_TYPE *pxHigherPriorityTaskWoken,
 										   portBASE_TYPE xCopyPosition
                                        );
  </pre>
@@ -1027,19 +1018,18 @@ void vQueueDelete( xQueueHandle xQueue );
  * queue was created, so this many bytes will be copied from pvItemToQueue
  * into the queue storage area.
  *
- * @param cTaskPreviouslyWoken This is included so an ISR can post onto
- * the same queue multiple times from a single interrupt.  The first call
- * should always pass in pdFALSE.  Subsequent calls should pass in
- * the value returned from the previous call.  See the file serial .c in the
- * PC port for a good example of this mechanism.
+ * @param pxHigherPriorityTaskWoken xQueueGenericSendFromISR() will set
+ * *pxHigherPriorityTaskWoken to pdTRUE if sending to the queue caused a task
+ * to unblock, and the unblocked task has a priority higher than the currently
+ * running task.  If xQueueGenericSendFromISR() sets this value to pdTRUE then
+ * a context switch should be requested before the interrupt is exited.
  *
  * @param xCopyPosition Can take the value queueSEND_TO_BACK to place the
  * item at the back of the queue, or queueSEND_TO_FRONT to place the item
  * at the front of the queue (for high priority messages).
  *
- * @return pdTRUE if a task was woken by posting onto the queue.  This is
- * used by the ISR to determine if a context switch may be required following
- * the ISR.
+ * @return pdTRUE if the data was successfully sent to the queue, otherwise
+ * errQUEUE_FULL.
  *
  * Example usage for buffered IO (where the ISR can obtain more than one value
  * per call):
@@ -1047,10 +1037,10 @@ void vQueueDelete( xQueueHandle xQueue );
  void vBufferISR( void )
  {
  portCHAR cIn;
- portBASE_TYPE xTaskWokenByPost;
+ portBASE_TYPE xHigherPriorityTaskWokenByPost;
 
     // We have not woken a task at the start of the ISR.
-    cTaskWokenByPost = pdFALSE;
+    xHigherPriorityTaskWokenByPost = pdFALSE;
 
     // Loop until the buffer is empty.
     do
@@ -1058,21 +1048,16 @@ void vQueueDelete( xQueueHandle xQueue );
         // Obtain a byte from the buffer.
         cIn = portINPUT_BYTE( RX_REGISTER_ADDRESS );						
 
-        // Post the byte.  The first time round the loop cTaskWokenByPost
-        // will be pdFALSE.  If the queue send causes a task to wake we do
-        // not want the task to run until we have finished the ISR, so
-        // xQueueSendFromISR does not cause a context switch.  Also we
-        // don't want subsequent posts to wake any other tasks, so we store
-        // the return value back into cTaskWokenByPost so xQueueSendFromISR
-        // knows not to wake any task the next iteration of the loop.
-        xTaskWokenByPost = xQueueGenericSendFromISR( xRxQueue, &cIn, cTaskWokenByPost, queueSEND_TO_BACK );
+        // Post each byte.
+        xQueueGenericSendFromISR( xRxQueue, &cIn, &xHigherPriorityTaskWokenByPost, queueSEND_TO_BACK );
 
     } while( portINPUT_BYTE( BUFFER_COUNT ) );
 
-    // Now the buffer is empty we can switch context if necessary.
-    if( cTaskWokenByPost )
+    // Now the buffer is empty we can switch context if necessary.  Note that the
+    // name of the yield function required is port specific.
+    if( xHigherPriorityTaskWokenByPost )
     {
-        taskYIELD ();
+        taskYIELD_YIELD_FROM_ISR();
     }
  }
  </pre>
@@ -1080,7 +1065,7 @@ void vQueueDelete( xQueueHandle xQueue );
  * \defgroup xQueueSendFromISR xQueueSendFromISR
  * \ingroup QueueManagement
  */
-signed portBASE_TYPE xQueueGenericSendFromISR( xQueueHandle pxQueue, const void * const pvItemToQueue, signed portBASE_TYPE xTaskPreviouslyWoken, portBASE_TYPE xCopyPosition );
+signed portBASE_TYPE xQueueGenericSendFromISR( xQueueHandle pxQueue, const void * const pvItemToQueue, signed portBASE_TYPE *pxHigherPriorityTaskWoken, portBASE_TYPE xCopyPosition );
 
 /**
  * queue. h
@@ -1169,7 +1154,7 @@ signed portBASE_TYPE xQueueGenericSendFromISR( xQueueHandle pxQueue, const void 
  * \defgroup xQueueReceiveFromISR xQueueReceiveFromISR
  * \ingroup QueueManagement
  */
-signed portBASE_TYPE xQueueReceiveFromISR( xQueueHandle pxQueue, const void * const pvBuffer, signed portBASE_TYPE *pxTaskWoken );
+signed portBASE_TYPE xQueueReceiveFromISR( xQueueHandle pxQueue, void * const pvBuffer, signed portBASE_TYPE *pxTaskWoken );
 
 /*
  * Utilities to query queue that are safe to use from an ISR.  These utilities
@@ -1195,7 +1180,7 @@ unsigned portBASE_TYPE uxQueueMessagesWaitingFromISR( const xQueueHandle pxQueue
  * sacrifices execution speed to ensure better interrupt responsiveness.
  */
 signed portBASE_TYPE xQueueAltGenericSend( xQueueHandle pxQueue, const void * const pvItemToQueue, portTickType xTicksToWait, portBASE_TYPE xCopyPosition );
-signed portBASE_TYPE xQueueAltGenericReceive( xQueueHandle pxQueue, const void * const pvBuffer, portTickType xTicksToWait, portBASE_TYPE xJustPeeking );
+signed portBASE_TYPE xQueueAltGenericReceive( xQueueHandle pxQueue, void * const pvBuffer, portTickType xTicksToWait, portBASE_TYPE xJustPeeking );
 #define xQueueAltSendToFront( xQueue, pvItemToQueue, xTicksToWait ) xQueueAltGenericSend( xQueue, pvItemToQueue, xTicksToWait, queueSEND_TO_FRONT )
 #define xQueueAltSendToBack( xQueue, pvItemToQueue, xTicksToWait ) xQueueAltGenericSend( xQueue, pvItemToQueue, xTicksToWait, queueSEND_TO_BACK )
 #define xQueueAltReceive( xQueue, pvBuffer, xTicksToWait ) xQueueAltGenericReceive( xQueue, pvBuffer, xTicksToWait, pdFALSE )
@@ -1228,6 +1213,32 @@ xQueueHandle xQueueCreateCountingSemaphore( unsigned portBASE_TYPE uxCountValue,
  */
 portBASE_TYPE xQueueTakeMutexRecursive( xQueueHandle xMutex, portTickType xBlockTime );
 portBASE_TYPE xQueueGiveMutexRecursive( xQueueHandle xMutex );
+
+/*
+ * The registry is provided as a means for kernel aware debuggers to
+ * locate queues, semaphores and mutexes.  Call vQueueAddToRegistry() add
+ * a queue, semaphore or mutex handle to the registry if you want the handle 
+ * to be available to a kernel aware debugger.  If you are not using a kernel 
+ * aware debugger then this function can be ignored.
+ *
+ * configQUEUE_REGISTRY_SIZE defines the maximum number of handles the
+ * registry can hold.  configQUEUE_REGISTRY_SIZE must be greater than 0 
+ * within FreeRTOSConfig.h for the registry to be available.  Its value
+ * does not effect the number of queues, semaphores and mutexes that can be 
+ * created - just the number that the registry can hold.
+ *
+ * @param xQueue The handle of the queue being added to the registry.  This
+ * is the handle returned by a call to xQueueCreate().  Semaphore and mutex
+ * handles can also be passed in here.
+ *
+ * @param pcName The name to be associated with the handle.  This is the
+ * name that the kernel aware debugger will display.
+ */
+#if configQUEUE_REGISTRY_SIZE > 0
+	void vQueueAddToRegistry( xQueueHandle xQueue, signed portCHAR *pcName );
+#endif
+
+
 
 
 #ifdef __cplusplus
