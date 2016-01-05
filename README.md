@@ -5,7 +5,7 @@ includes a selection of the FreeRTOS files.
 
 ## Version
 
-* V5.4.2
+* V6.1.1
 
 ## Documentation
 
@@ -16,7 +16,7 @@ http://www.freertos.org/a00106.html.
 
 The original files are stored in the `originals` branch.
 
-These files were extracted from `FreeRTOSV5.4.2.zip`.
+These files were extracted from `FreeRTOSV6.1.1.zip`.
 
 To save space, only the FreeRTOS folder was preserved and the following folders/files were removed:
 
