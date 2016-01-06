@@ -84,10 +84,12 @@
 #include <string.h>
 #include "cmsis_os.h"
 
-/* remove warnings (LNP) */
+// [LNP] [ILG]
 #if defined ( __GNUC__ )
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Waggregate-return"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 
 extern void xPortSysTickHandler(void);
@@ -1533,7 +1535,7 @@ osStatus osRecursiveMutexWait (osMutexId mutex_id, uint32_t millisec)
 #endif
 }
 
-/* (LNP) */
+// [LNP]
 #if defined ( __GNUC__ )
 #pragma GCC diagnostic pop
 #endif
