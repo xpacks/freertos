@@ -147,6 +147,12 @@ typedef struct xMEMORY_REGION
 	uint32_t ulParameters;
 } MemoryRegion_t;
 
+// [ILG]
+#if defined ( __GNUC__ )
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpadded"
+#endif
+
 /*
  * Parameters required to create an MPU protected task.
  */
@@ -174,6 +180,11 @@ typedef struct xTASK_STATUS
 	uint32_t ulRunTimeCounter;		/* The total run time allocated to the task so far, as defined by the run time stats clock.  See http://www.freertos.org/rtos-run-time-stats.html.  Only valid when configGENERATE_RUN_TIME_STATS is defined as 1 in FreeRTOSConfig.h. */
 	uint16_t usStackHighWaterMark;	/* The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
 } TaskStatus_t;
+
+// [ILG]
+#if defined ( __GNUC__ )
+#pragma GCC diagnostic pop
+#endif
 
 /* Possible return values for eTaskConfirmSleepModeStatus(). */
 typedef enum

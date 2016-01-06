@@ -88,6 +88,12 @@ typedef void * CoRoutineHandle_t;
 /* Defines the prototype to which co-routine functions must conform. */
 typedef void (*crCOROUTINE_CODE)( CoRoutineHandle_t, UBaseType_t );
 
+// [ILG]
+#if defined ( __GNUC__ )
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpadded"
+#endif
+
 typedef struct corCoRoutineControlBlock
 {
 	crCOROUTINE_CODE 	pxCoRoutineFunction;
@@ -97,6 +103,11 @@ typedef struct corCoRoutineControlBlock
 	UBaseType_t 		uxIndex;			/*< Used to distinguish between co-routines when multiple co-routines use the same co-routine function. */
 	uint16_t 			uxState;			/*< Used internally by the co-routine implementation. */
 } CRCB_t; /* Co-routine control block.  Note must be identical in size down to uxPriority with TCB_t. */
+
+// [ILG]
+#if defined ( __GNUC__ )
+#pragma GCC diagnostic pop
+#endif
 
 /**
  * croutine. h

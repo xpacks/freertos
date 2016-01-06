@@ -122,6 +122,12 @@ zero. */
 	#define queueYIELD_IF_USING_PREEMPTION() portYIELD_WITHIN_API()
 #endif
 
+// [ILG]
+#if defined ( __GNUC__ )
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpadded"
+#endif
+
 /*
  * Definition of the queue used by the scheduler.
  * Items are queued by copy, not reference.  See the following link for the
@@ -159,6 +165,11 @@ typedef struct QueueDefinition
 	#endif
 
 } xQUEUE;
+
+// [ILG]
+#if defined ( __GNUC__ )
+#pragma GCC diagnostic pop
+#endif
 
 /* The old xQUEUE name is maintained above then typedefed to the new Queue_t
 name below to enable the use of older kernel aware debuggers. */
