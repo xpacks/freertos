@@ -433,9 +433,15 @@ uint32_t osKernelSysTick (void);
 #define osThreadDef(name, thread, priority, instances, stacksz)  \
 extern const osThreadDef_t os_thread_def_##name
 #else                            // define the object
+// [ILG]
+#if 0
+#define osThreadDef(name, thread, priority, instances, stacksz) \
+const osThreadDef_t os_thread_def_##name = \
+{ (char*)#name, (thread), (priority), (instances), (stacksz)  }
+#endif
 #define osThreadDef(name, thread, priority, instances, stacksz)  \
 const osThreadDef_t os_thread_def_##name = \
-{ #name, (thread), (priority), (instances), (stacksz)  }
+{ (char*)#name, (thread), (priority), (instances), (stacksz)  }
 #endif
 
 /// Access a Thread definition.
