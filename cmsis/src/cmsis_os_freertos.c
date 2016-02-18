@@ -217,9 +217,10 @@ osThreadCreate (const osThreadDef_t *thread_def, void *argument)
   TaskHandle_t handle;
 
   if (xTaskCreate ((TaskFunction_t) thread_def->pthread,
-                   (const portCHAR *) thread_def->name, thread_def->stacksize,
-                   argument, makeFreeRtosPriority (thread_def->tpriority),
-                   &handle) != pdPASS)
+                   (const portCHAR *) thread_def->name,
+                   thread_def->stacksize / sizeof(void*), argument,
+                   makeFreeRtosPriority (thread_def->tpriority), &handle)
+      != pdPASS)
     {
       return NULL;
     }
