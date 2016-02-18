@@ -631,7 +631,6 @@ osStatus
 osMutexWait (osMutexId mutex_id, uint32_t millisec)
 {
   TickType_t ticks;
-  portBASE_TYPE taskWoken = pdFALSE;
 
   if (mutex_id == NULL)
     {
@@ -652,6 +651,10 @@ osMutexWait (osMutexId mutex_id, uint32_t millisec)
         }
     }
 
+  // [ILG]
+#if 0
+  portBASE_TYPE taskWoken = pdFALSE;
+
   if (inHandlerMode ())
     {
       if (xSemaphoreTakeFromISR (mutex_id, &taskWoken) != pdTRUE)
@@ -660,7 +663,10 @@ osMutexWait (osMutexId mutex_id, uint32_t millisec)
         }
       portEND_SWITCHING_ISR (taskWoken);
     }
-  else if (xSemaphoreTake (mutex_id, ticks) != pdTRUE)
+  else
+#endif
+
+    if (xSemaphoreTake (mutex_id, ticks) != pdTRUE)
     {
       return osErrorOS;
     }
@@ -678,6 +684,9 @@ osStatus
 osMutexRelease (osMutexId mutex_id)
 {
   osStatus result = osOK;
+
+  // [ILG]
+#if 0
   portBASE_TYPE taskWoken = pdFALSE;
 
   if (inHandlerMode ())
@@ -688,7 +697,9 @@ osMutexRelease (osMutexId mutex_id)
         }
       portEND_SWITCHING_ISR (taskWoken);
     }
-  else if (xSemaphoreGive (mutex_id) != pdTRUE)
+  else
+#endif
+    if (xSemaphoreGive (mutex_id) != pdTRUE)
     {
       result = osErrorOS;
     }
