@@ -64,6 +64,13 @@ os_main (int argc, char* argv[])
   Thread th2
     { attr1, (thread::func_t) task, (thread::func_args_t) nullptr };
 
+  thread::priority_t prio = th1.sched_prio();
+  assert(prio == thread::priority::normal);
+
+  th1.sched_prio(thread::priority::high);
+  prio = th1.sched_prio();
+  assert(prio == thread::priority::high);
+
   th1.join ();
   th2.join ();
 
