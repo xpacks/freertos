@@ -150,6 +150,10 @@ osStatus osKernelStart (void)
 {
   vTaskStartScheduler();
   
+  // [ILG]
+  // Cannot be compliant if main() is a thread.
+  // vTaskStartScheduler() will only return if there is insufficient
+  // RTOS heap available to create the idle or timer daemon tasks.
   return osOK;
 }
 
