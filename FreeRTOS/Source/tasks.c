@@ -4482,13 +4482,6 @@ TickType_t uxReturn;
 
 #endif /* configUSE_TASK_NOTIFICATIONS */
 
-// [ILG]
-int
-is_scheduler_running(void)
-{
-  return (xSchedulerRunning == pdTRUE);
-}
-
 #ifdef FREERTOS_MODULE_TEST
 	#include "tasks_test_access_functions.h"
 #endif
