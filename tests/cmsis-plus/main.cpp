@@ -60,6 +60,7 @@ os_main (int argc, char* argv[])
 
   thread::Attributes attr1
     { "th2" };
+
   Thread th2
     { attr1, (thread::func_t) task, (thread::func_args_t) nullptr };
 
@@ -69,22 +70,3 @@ os_main (int argc, char* argv[])
   return 1;
 }
 
-#if 0
-int
-__main (int argc __attribute__((unused)), char* argv[] __attribute__((unused)))
-  {
-    trace::printf ("Test CMSIS++ RTOS based on FreeRTOS.\n");
-
-    scheduler::initialize ();
-
-    // Necessarily static
-    static thread::Attributes attr
-      { "main"};
-    static Thread main_thread
-      { attr, (thread::func_t) os_main_task, (thread::func_args_t) nullptr};
-
-    scheduler::start ();
-
-    return 0;
-  }
-#endif
