@@ -26,6 +26,62 @@
 
 #include <cassert>
 #include <cerrno>
+#include <cstdlib>
+
+// ----------------------------------------------------------------------------
+
+namespace os
+{
+  namespace rtos
+  {
+    namespace thread
+    {
+      using main_func_t = int (*) (int argc, char* argv[]);
+
+      using main_args_t = struct
+        {
+          main_func_t func;
+          int argc;
+          char** argv;
+        };
+
+      static void
+      main_trampoline (main_args_t* args)
+      {
+        std::exit (args->func (args->argc, args->argv));
+      }
+
+    } /* namespace thread */
+  } /* namespace rtos */
+} /* namespace os */
+
+// ----------------------------------------------------------------------------
+
+int __attribute__((weak))
+main (int argc, char* argv[])
+{
+  using namespace os::rtos;
+
+  scheduler::initialize ();
+
+  static thread::main_args_t args;
+  args.func = os_main;
+  args.argc = argc;
+  args.argv = argv;
+
+  // Necessarily static
+  static thread::Attributes attr
+    { "main" };
+  static Thread main_thread
+    { attr, (thread::func_t) thread::main_trampoline,
+        (thread::func_args_t) &args };
+
+  scheduler::start ();
+
+  main_thread.join ();
+
+  return 0;
+}
 
 // ----------------------------------------------------------------------------
 
@@ -44,19 +100,21 @@ namespace os
 void
 os_systick_handler (void)
 {
+  using namespace os::rtos;
+
   // Prevent scheduler actions before starting it.
-  if (os::rtos::scheduler::is_started ())
+  if (scheduler::is_started ())
     {
       os_impl_systick_handler ();
     }
-  os::rtos::__systick_now++;
+  __systick_now++;
 
 #if !defined(OS_INCLUDE_REALTIME_CLOCK_DRIVER)
-  static uint32_t ticks = os::rtos::Systick_clock::frequency_hz;
+  static uint32_t ticks = Systick_clock::frequency_hz;
 
   if (--ticks == 0)
     {
-      ticks = os::rtos::Systick_clock::frequency_hz;
+      ticks = Systick_clock::frequency_hz;
 
       os_rtc_handler ();
     }
@@ -66,18 +124,26 @@ os_systick_handler (void)
 void
 os_rtc_handler (void)
 {
+  using namespace os::rtos;
+
   // Prevent scheduler actions before starting it.
-  if (os::rtos::scheduler::is_started ())
+  if (scheduler::is_started ())
     {
       os_impl_rtc_handler ();
     }
-  ++os::rtos::__rtc_now;
+  ++__rtc_now;
 }
 
-void
+void __attribute__((weak))
+os_impl_systick_handler (void)
+{
+  // TODO
+}
+
+void __attribute__((weak))
 os_impl_rtc_handler (void)
 {
-  ;
+  // TODO
 }
 
 // ----------------------------------------------------------------------------
