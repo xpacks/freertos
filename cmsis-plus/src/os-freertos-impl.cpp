@@ -34,6 +34,7 @@ namespace os
   namespace rtos
   {
     static Systick_clock::rep __systick_now;
+    static Realtime_clock::rep __rtc_now;
 
   } /* namespace rtos */
 } /* namespace os */
@@ -49,6 +50,34 @@ os_systick_handler (void)
       os_impl_systick_handler ();
     }
   os::rtos::__systick_now++;
+
+#if !defined(OS_INCLUDE_REALTIME_CLOCK_DRIVER)
+  static uint32_t ticks = os::rtos::Systick_clock::frequency_hz;
+
+  if (--ticks == 0)
+    {
+      ticks = os::rtos::Systick_clock::frequency_hz;
+
+      os_rtc_handler ();
+    }
+#endif
+}
+
+void
+os_rtc_handler (void)
+{
+  // Prevent scheduler actions before starting it.
+  if (os::rtos::scheduler::is_started ())
+    {
+      os_impl_rtc_handler ();
+    }
+  ++os::rtos::__rtc_now;
+}
+
+void
+os_impl_rtc_handler (void)
+{
+  ;
 }
 
 // ----------------------------------------------------------------------------
@@ -105,7 +134,7 @@ namespace os
     result_t
     Systick_clock::sleep_for (Systick_clock::sleep_rep ticks)
     {
-      assert(!scheduler::is_in_isr ());
+      os_assert_err(!scheduler::is_in_isr (), EPERM);
 
       // trace::printf ("Systick_clock::sleep_for(%d_ticks)\n", ticks);
 
@@ -113,8 +142,6 @@ namespace os
 
       return result::ok;
     }
-
-    static Realtime_clock::rep __rtc_now = 1000000;
 
     /**
      * @details
@@ -138,6 +165,8 @@ namespace os
     result_t
     Realtime_clock::sleep_for (Realtime_clock::sleep_rep secs)
     {
+      os_assert_err(!scheduler::is_in_isr (), EPERM);
+
       trace::printf ("Realtime_clock::sleep_for(%ds)\n", secs);
       __rtc_now += secs;
       return result::ok;
@@ -157,7 +186,8 @@ namespace os
       result_t
       initialize (void)
       {
-        assert(!scheduler::is_in_isr ());
+        os_assert_err(!scheduler::is_in_isr (), EPERM);
+
         // TODO
         trace::printf ("%s() \n", __func__);
         return result::ok;
@@ -185,7 +215,7 @@ namespace os
       result_t
       start (void)
       {
-        assert(!scheduler::is_in_isr ());
+        os_assert_err(!scheduler::is_in_isr (), EPERM);
 
         trace::printf ("%s() \n", __func__);
 
@@ -208,7 +238,7 @@ namespace os
       status_t
       lock (void)
       {
-        assert(!scheduler::is_in_isr ());
+        os_assert_throw(!scheduler::is_in_isr (), EPERM);
 
         status_t tmp = is_locked_;
         is_locked_ = true;
@@ -227,7 +257,7 @@ namespace os
       status_t
       unlock (status_t status)
       {
-        assert(!scheduler::is_in_isr ());
+        os_assert_throw(!scheduler::is_in_isr (), EPERM);
 
         status_t tmp = is_locked_;
         is_locked_ = status;
@@ -296,7 +326,7 @@ namespace flags
   result_t
   clear (Thread& thread, event_flags_t flags, event_flags_t* out_flags)
   {
-    assert(!scheduler::is_in_isr ());
+    os_assert_err(!scheduler::is_in_isr (), EPERM);
 
     return result::ok;
   }
@@ -309,7 +339,7 @@ namespace flags
   result_t
   wait (event_flags_t flags, event_flags_t* out_flags)
   {
-    assert(!scheduler::is_in_isr ());
+    os_assert_err(!scheduler::is_in_isr (), EPERM);
 
     return result::ok;
   }
@@ -333,7 +363,7 @@ namespace flags
   result_t
   timed_wait (event_flags_t flags, event_flags_t* out_flags, systicks_t ticks)
   {
-    assert(!scheduler::is_in_isr ());
+    os_assert_err(!scheduler::is_in_isr (), EPERM);
 
     return result::ok;
   }
@@ -366,7 +396,7 @@ namespace this_thread
   Thread&
   thread (void)
   {
-    assert(!scheduler::is_in_isr ());
+    os_assert_throw(!scheduler::is_in_isr (), EPERM);
 
     TaskHandle_t th = xTaskGetCurrentTaskHandle ();
 
@@ -385,7 +415,7 @@ namespace this_thread
   void
   yield (void)
   {
-    assert(!scheduler::is_in_isr ());
+    os_assert_throw(!scheduler::is_in_isr (), EPERM);
 
     taskYIELD();
   }
@@ -477,7 +507,7 @@ Thread::Thread (const thread::Attributes& attr, thread::func_t function,
     Named_object
       { attr.name () }
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_throw(!scheduler::is_in_isr (), EPERM);
 
   assert(function != nullptr);
   assert(attr.th_priority != thread::priority::none);
@@ -507,8 +537,12 @@ Thread::Thread (const thread::Attributes& attr, thread::func_t function,
       stack_size_words = configMINIMAL_STACK_SIZE;
     }
 
-  TaskHandle_t th;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
   BaseType_t res;
+#pragma GCC diagnostic pop
+
+  TaskHandle_t th;
   res = xTaskCreate((TaskFunction_t ) trampoline, (const portCHAR *) name (),
                     stack_size_words, this, makeFreeRtosPriority (prio_), &th);
   assert(res == pdPASS);
@@ -566,14 +600,14 @@ Thread::wakeup (void)
  */
 void
 Thread::wakeup (result_t reason)
-{
-  assert(reason == EINTR || reason == ETIMEDOUT);
+  {
+    assert(reason == EINTR || reason == ETIMEDOUT);
 
-  trace::printf ("%s(&d) @%p %s \n", __func__, reason, this, name ());
-  wakeup_reason_ = reason;
+    trace::printf ("%s(&d) @%p %s \n", __func__, reason, this, name ());
+    wakeup_reason_ = reason;
 
-  // TODO
-}
+    // TODO
+  }
 #endif
 
 /**
@@ -640,11 +674,11 @@ Thread::sched_prio (thread::priority_t prio)
 result_t
 Thread::join (void** exit_ptr)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
-  // TODO
+  // TODO optimise it to use events instead of sleep_for().
   for (;;)
     {
       if (state_ == thread::state::terminated)
@@ -654,6 +688,10 @@ Thread::join (void** exit_ptr)
       Systick_clock::sleep_for (1);
     }
 
+  if (exit_ptr != nullptr)
+    {
+      *exit_ptr = func_result_;
+    }
   trace::printf ("%s() @%p %s joined\n", __func__, this, name ());
 
   return result::ok;
@@ -678,7 +716,7 @@ Thread::join (void** exit_ptr)
 result_t
 Thread::detach (void)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
@@ -703,7 +741,7 @@ Thread::detach (void)
 result_t
 Thread::cancel (void)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
@@ -749,7 +787,7 @@ Thread::cancel (void)
 void
 Thread::exit (void* value_ptr)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_throw(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
@@ -786,7 +824,7 @@ Timer::Timer (timer::func_t function, timer::func_args_t args) :
     Timer
       { timer::initializer, function, args }
 {
-
+  ;
 }
 
 /**
@@ -800,8 +838,9 @@ Timer::Timer (const timer::Attributes& attr, timer::func_t function,
       { attr.name () }
 
 {
+  os_assert_throw(!scheduler::is_in_isr (), EPERM);
+
   assert(function != nullptr);
-  assert(!scheduler::is_in_isr ());
 
   type_ = attr.tm_type;
   func_ = function;
@@ -830,7 +869,7 @@ Timer::~Timer ()
 result_t
 Timer::start (systicks_t ticks)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s(%d) @%p \n", __func__, ticks, this);
   // TODO
@@ -845,7 +884,7 @@ Timer::start (systicks_t ticks)
 result_t
 Timer::stop (void)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p \n", __func__, this);
   // TODO
@@ -897,7 +936,7 @@ Mutex::Mutex (const mutex::Attributes& attr) :
     protocol_ (attr.mx_protocol), //
     robustness_ (attr.mx_robustness) //
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_throw(!scheduler::is_in_isr (), EPERM);
 
   prio_ceiling_ = attr.mx_priority_ceiling;
   owner_ = nullptr;
@@ -961,7 +1000,7 @@ Mutex::~Mutex ()
 result_t
 Mutex::lock (void)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p \n", __func__, this);
   // TODO
@@ -1002,7 +1041,7 @@ Mutex::lock (void)
 result_t
 Mutex::try_lock (void)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p \n", __func__, this);
   // TODO
@@ -1042,7 +1081,7 @@ Mutex::try_lock (void)
 result_t
 Mutex::timed_lock (systicks_t ticks)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s(%d_ticks) @%p \n", __func__, ticks, this);
   // TODO
@@ -1070,7 +1109,7 @@ Mutex::timed_lock (systicks_t ticks)
 result_t
 Mutex::unlock (void)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p \n", __func__, this);
   // TODO
@@ -1089,7 +1128,7 @@ Mutex::unlock (void)
 result_t
 Mutex::get_prio_ceiling (thread::priority_t* prio_ceiling) const
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p \n", __func__, this);
   if (prio_ceiling != nullptr)
@@ -1121,7 +1160,7 @@ result_t
 Mutex::set_prio_ceiling (thread::priority_t prio_ceiling,
                          thread::priority_t* old_prio_ceiling)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p \n", __func__, this);
   // TODO
@@ -1154,7 +1193,7 @@ Mutex::set_prio_ceiling (thread::priority_t prio_ceiling,
 result_t
 Mutex::consistent (void)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p \n", __func__, this);
   // TODO
@@ -1190,7 +1229,7 @@ Condition_variable::Condition_variable (const condvar::Attributes& attr) :
     Named_object
       { attr.name () }
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_throw(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p \n", __func__, this);
 }
@@ -1242,7 +1281,7 @@ Condition_variable::~Condition_variable ()
 result_t
 Condition_variable::signal ()
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p \n", __func__, this);
   // TODO
@@ -1285,7 +1324,7 @@ Condition_variable::signal ()
 result_t
 Condition_variable::broadcast ()
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p \n", __func__, this);
   // TODO
@@ -1307,7 +1346,7 @@ Condition_variable::broadcast ()
 result_t
 Condition_variable::wait (Mutex* mutex)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p \n", __func__, this);
   // TODO
@@ -1329,7 +1368,7 @@ Condition_variable::wait (Mutex* mutex)
 result_t
 Condition_variable::timed_wait (Mutex* mutex, systicks_t ticks)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s(%d_ticks) @%p \n", __func__, ticks, this);
   // TODO
@@ -1380,10 +1419,12 @@ Semaphore::Semaphore (const semaphore::Attributes& attr) :
     initial_count_ (attr.sm_initial_count), //
     max_count_ (attr.sm_max_count)
 {
-  count_ = attr.sm_initial_count;
+  os_assert_throw(!scheduler::is_in_isr (), EPERM);
 
   assert(max_count_ > 0);
-  assert(count_ <= max_count_);
+  assert(attr.sm_initial_count <= max_count_);
+
+  count_ = attr.sm_initial_count;
 
   // TODO check if initial count can be negative, to validate.
 
@@ -1494,7 +1535,7 @@ Semaphore::post (void)
 result_t
 Semaphore::wait ()
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
@@ -1536,7 +1577,7 @@ Semaphore::wait ()
 result_t
 Semaphore::try_wait ()
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
@@ -1579,7 +1620,7 @@ Semaphore::try_wait ()
 result_t
 Semaphore::timed_wait (systicks_t ticks)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s(%d_ticks) @%p %s\n", __func__, ticks, this, name ());
     {
@@ -1609,9 +1650,17 @@ Semaphore::get_value (semaphore::count_t* value)
   return result::ok;
 }
 
+/**
+ * @details
+ * Set the counter to the initial value.
+ *
+ * @warning Cannot be invoked from Interrupt Service Routines.
+ */
 result_t
 Semaphore::reset (void)
 {
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
+
   Critical_section_irq cs; // ---- Critical section
 
   if (count_ < 0)
@@ -1655,7 +1704,7 @@ Memory_pool::Memory_pool (const mempool::Attributes& attr,
     Named_object
       { attr.name () }
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_throw(!scheduler::is_in_isr (), EPERM);
 
   pool_addr_ = attr.mp_pool_address;
   blocks_ = blocks;
@@ -1673,8 +1722,6 @@ Memory_pool::Memory_pool (const mempool::Attributes& attr,
  */
 Memory_pool::~Memory_pool ()
 {
-  assert(!scheduler::is_in_isr ());
-
   trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
   // TODO
@@ -1692,7 +1739,7 @@ Memory_pool::~Memory_pool ()
 void*
 Memory_pool::alloc (void)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_throw(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
@@ -1730,7 +1777,7 @@ Memory_pool::try_alloc (void)
 void*
 Memory_pool::timed_alloc (systicks_t ticks)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_throw(!scheduler::is_in_isr (), EPERM);
 
   trace::printf ("%s(%d) @%p %s\n", __func__, ticks, this, name ());
 
@@ -1757,9 +1804,17 @@ Memory_pool::free (void* block)
   return result::ok;
 }
 
+/**
+ * @details
+ * Reset the memory pool to initial state, all block are free.
+ *
+ * @warning Cannot be invoked from Interrupt Service Routines.
+ */
 result_t
 Memory_pool::reset (void)
 {
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
+
   trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
   // TODO
@@ -1798,7 +1853,7 @@ Message_queue::Message_queue (const mqueue::Attributes&attr,
     msgs_ (msgs), //
     msg_size_bytes_ (msg_size_bytes)
 {
-  assert(!scheduler::is_in_isr ());
+  os_assert_throw(!scheduler::is_in_isr (), EPERM);
 
   queue_addr_ = attr.queue_address;
   queue_size_bytes_ = attr.queue_size_bytes;
@@ -1819,12 +1874,10 @@ Message_queue::Message_queue (const mqueue::Attributes&attr,
 }
 
 /**
- * @warning Cannot be invoked from Interrupt Service Routines.
+ *
  */
 Message_queue::~Message_queue ()
 {
-  assert(!scheduler::is_in_isr ());
-
   trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
   // If dynamically allocated, free.
@@ -1832,14 +1885,26 @@ Message_queue::~Message_queue ()
   // TODO
 }
 
+/**
+ * @details
+ *
+ * @warning Cannot be invoked from Interrupt Service Routines.
+ */
 result_t
 Message_queue::send (const char* msg, std::size_t nbytes,
                      mqueue::priority_t mprio)
 {
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
+
   // TODO
   return result::ok;
 }
 
+/**
+ * @details
+ *
+ * @note Can be invoked from Interrupt Service Routines.
+ */
 result_t
 Message_queue::try_send (const char* msg, std::size_t nbytes,
                          mqueue::priority_t mprio)
@@ -1848,39 +1913,71 @@ Message_queue::try_send (const char* msg, std::size_t nbytes,
   return result::ok;
 }
 
+/**
+ * @details
+ *
+ * @warning Cannot be invoked from Interrupt Service Routines.
+ */
 result_t
 Message_queue::timed_send (const char* msg, std::size_t nbytes,
                            mqueue::priority_t mprio, systicks_t ticks)
 {
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
+
   // TODO
   return result::ok;
 }
 
+/**
+ * @details
+ *
+ * @warning Cannot be invoked from Interrupt Service Routines.
+ */
 result_t
 Message_queue::receive (const char* msg, std::size_t nbytes,
                         mqueue::priority_t* mprio)
 {
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
+
   // TODO
-  return result::ok; //result::event_message;
+  return result::ok;
 }
 
+/**
+ * @details
+ *
+ * @note Can be invoked from Interrupt Service Routines.
+ */
 result_t
 Message_queue::try_receive (const char* msg, std::size_t nbytes,
                             mqueue::priority_t* mprio)
 {
-  // TODO return result::event_message when message;
+  // TODO return result::ok when message;
   return EAGAIN;
 }
 
+/**
+ * @details
+ *
+ * @warning Cannot be invoked from Interrupt Service Routines.
+ */
 result_t
 Message_queue::timed_receive (const char* msg, std::size_t nbytes,
                               mqueue::priority_t* mprio, systicks_t ticks)
 {
-  // TODO return result::event_message when message;
-  // TODO return result::event_timeout when timeout;
+  os_assert_err(!scheduler::is_in_isr (), EPERM);
+
+  // TODO return result::ok when message;
+  // TODO return ETIMEDOUT when timeout;
   return result::ok;
 }
 
+/**
+ * @details
+ * Clear both send and receive counter.
+ *
+ * @warning Cannot be invoked from Interrupt Service Routines.
+ */
 result_t
 Message_queue::reset (void)
 {
