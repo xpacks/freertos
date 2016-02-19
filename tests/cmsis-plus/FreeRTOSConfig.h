@@ -146,7 +146,10 @@ to exclude the API function. */
 #define INCLUDE_uxTaskPriorityGet		1
 #define INCLUDE_vTaskDelete				1
 #define INCLUDE_vTaskCleanUpResources	1
+
+// Required since portMAX_DELAY is used to specify 'wait forever'.
 #define INCLUDE_vTaskSuspend			1
+
 #define INCLUDE_vTaskDelayUntil			1
 #define INCLUDE_vTaskDelay				1
 #define INCLUDE_eTaskGetState			1
