@@ -772,11 +772,17 @@ namespace os
 #endif
 
     /**
+     * @details
+     *
      * No POSIX equivalent.
+     *
+     * @warning Cannot be invoked from Interrupt Service Routines.
      */
     thread::priority_t
     Thread::sched_prio (void)
     {
+      os_assert_err(!scheduler::is_in_isr (), thread::priority::error);
+
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
       UBaseType_t p = uxTaskPriorityGet (impl_);
@@ -800,10 +806,14 @@ namespace os
      *
      * The pthread_setschedprio() function shall not return an error
      * code of [EINTR].
+     *
+     * @warning Cannot be invoked from Interrupt Service Routines.
      */
     result_t
     Thread::sched_prio (thread::priority_t prio)
     {
+      os_assert_err(!scheduler::is_in_isr (), EPERM);
+
       assert(prio != thread::priority::none);
 
       trace::printf ("%s(%d) @%p %s\n", __func__, prio, this, name ());
@@ -1806,7 +1816,7 @@ namespace os
         }
       this_thread::yield ();
 
-      //TODO: return ETIMEDOUT
+      // Return EINTR?
       return result::ok;
     }
 
@@ -1887,7 +1897,10 @@ namespace os
           // Add current thread to the semaphore waiting list.
           list_.add (&this_thread::thread ());
         }
-      return Systick_clock::sleep_for (ticks);
+      Systick_clock::sleep_for (ticks);
+
+      // TODO: return EINTR
+      return ETIMEDOUT;
     }
 
     /**
@@ -1908,6 +1921,8 @@ namespace os
           // There are waiting tasks
           return EAGAIN;
         }
+
+      // TODO: reset waiting list
 
       count_ = initial_count_;
       return result::ok;
@@ -2109,6 +2124,8 @@ namespace os
 
       count_ = 0;
 
+      impl_ = xQueueCreate(msgs_, queue_size_bytes_);
+
       trace::printf ("%s() @%p %s %d %d\n", __func__, this, name (), msgs_,
                      msg_size_bytes_);
     }
@@ -2120,13 +2137,39 @@ namespace os
     {
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
-      // If dynamically allocated, free.
+      // TODO: Free dynamically allocated structures.
 
-      // TODO
+      vQueueDelete (impl_);
     }
 
     /**
      * @details
+     * The send() function shall add the message pointed to by the argument
+     * msg to the message queue. The nbytes argument specifies the length
+     * of the message, in bytes, pointed to by msg. The value of nbytes
+     * shall be less than or equal to the msg_size_bytes parameter of the
+     * message queue object, or send() shall fail.
+     *
+     * If the specified message queue is not full, send() shall behave
+     * as if the message is inserted into the message queue at the
+     * position indicated by the mprio argument. A message with a
+     * larger numeric value of mprio shall be inserted before messages
+     * with lower values of mprio. A message shall be inserted after
+     * other messages in the queue, if any, with equal mprio. The
+     * value of mprio shall be less than {MQ_PRIO_MAX}.
+     *
+     * If the specified message queue is full, send() shall block
+     * until space becomes available to enqueue the message, or
+     * until send() is cancelled/interrupted. If more than one
+     * thread is waiting to send when space becomes available
+     * in the message queue and the Priority Scheduling option is
+     * supported, then the thread of the highest priority that has
+     * been waiting the longest shall be unblocked to send its
+     * message. Otherwise, it is unspecified which waiting thread
+     * is unblocked.
+     *
+     * Compatible with POSIX `mq_send()` with O_NONBLOCK not set.
+     * http://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_timedsend.html
      *
      * @warning Cannot be invoked from Interrupt Service Routines.
      */
@@ -2135,13 +2178,42 @@ namespace os
                          mqueue::priority_t mprio)
     {
       os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(msg != nullptr, EINVAL);
+      os_assert_err(nbytes > msg_size_bytes_, EINVAL);
 
-      // TODO
+      // FreeRTOS will store the full message, regardless of the nbytes.
+      BaseType_t res = xQueueSend(impl_, msg, portMAX_DELAY);
+
+      if (res != pdTRUE)
+        {
+          return ENOTRECOVERABLE;
+        }
+
+      ++count_;
       return result::ok;
     }
 
     /**
      * @details
+     * The send() function shall add the message pointed to by the argument
+     * msg to the message queue. The nbytes argument specifies the length
+     * of the message, in bytes, pointed to by msg. The value of nbytes
+     * shall be less than or equal to the msg_size_bytes parameter of the
+     * message queue object, or send() shall fail.
+     *
+     * If the message queue is not full, send() shall behave
+     * as if the message is inserted into the message queue at the
+     * position indicated by the mprio argument. A message with a
+     * larger numeric value of mprio shall be inserted before messages
+     * with lower values of mprio. A message shall be inserted after
+     * other messages in the queue, if any, with equal mprio. The
+     * value of mprio shall be less than {MQ_PRIO_MAX}.
+     *
+     * If the message queue is full, the message shall
+     * not be queued and try_send() shall return an error.
+     *
+     * Compatible with POSIX `mq_send()` with O_NONBLOCK set.
+     * http://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_timedsend.html
      *
      * @note Can be invoked from Interrupt Service Routines.
      */
@@ -2149,12 +2221,63 @@ namespace os
     Message_queue::try_send (const char* msg, std::size_t nbytes,
                              mqueue::priority_t mprio)
     {
-      // TODO
+      os_assert_err(msg != nullptr, EINVAL);
+      os_assert_err(nbytes > msg_size_bytes_, EINVAL);
+
+      portBASE_TYPE thread_woken = pdFALSE;
+
+      if (scheduler::is_in_isr ())
+        {
+          if (xQueueSendFromISR (impl_, msg, &thread_woken) != pdTRUE)
+            {
+              return EAGAIN;
+            }
+          portEND_SWITCHING_ISR(thread_woken);
+        }
+      else
+        {
+          if (xQueueSend (impl_, msg, 0) != pdTRUE)
+            {
+              return EAGAIN;
+            }
+        }
+
+      ++count_;
       return result::ok;
     }
 
     /**
      * @details
+     * The send() function shall add the message pointed to by the argument
+     * msg to the message queue. The nbytes argument specifies the length
+     * of the message, in bytes, pointed to by msg. The value of nbytes
+     * shall be less than or equal to the msg_size_bytes attribute of the
+     * message queue object, or send() shall fail.
+     *
+     * If the message queue is not full, send() shall behave
+     * as if the message is inserted into the message queue at the
+     * position indicated by the mprio argument. A message with a
+     * larger numeric value of mprio shall be inserted before messages
+     * with lower values of mprio. A message shall be inserted after
+     * other messages in the queue, if any, with equal mprio. The
+     * value of mprio shall be less than {MQ_PRIO_MAX}.
+     *
+     * If the message queue is full, the wait for sufficient
+     * room in the queue shall be terminated when the specified timeout
+     * expires.
+     *
+     * The timeout shall expire after the given number of system ticks.
+     *
+     * Under no circumstance shall the operation fail with a timeout
+     * if there is sufficient room in the queue to add the message
+     * immediately.
+     *
+     * Compatible with POSIX `mq_timedsend()`.
+     * http://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_timedsend.html
+     *
+     * Differences from the standard:
+     * - the timeout is not expressed as an absolute time point, but
+     * as a relative number of system ticks.
      *
      * @warning Cannot be invoked from Interrupt Service Routines.
      */
@@ -2163,65 +2286,200 @@ namespace os
                                mqueue::priority_t mprio, systicks_t ticks)
     {
       os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(msg != nullptr, EINVAL);
+      os_assert_err(nbytes > msg_size_bytes_, EINVAL);
 
-      // TODO
+      // FreeRTOS will store the full message, regardless of the nbytes.
+      BaseType_t res = xQueueSend(impl_, msg, ticks > 0 ? ticks : 1);
+
+      if (res != pdTRUE)
+        {
+          return ETIMEDOUT;
+        }
+
+      ++count_;
       return result::ok;
     }
 
     /**
      * @details
+     * The receive() function shall receive the oldest of the highest
+     * priority message(s) from the message queue. If the size of the
+     * buffer in bytes, specified by the nbytes argument, is less than
+     * the msg_size_bytes attribute of the message queue, the function
+     * shall fail and return an error. Otherwise, the selected message
+     * shall be removed from the queue and copied to the buffer pointed
+     * to by the msg argument.
+     *
+     * If the value of nbytes is greater than {SSIZE_MAX}, the result
+     * is implementation-defined.
+     *
+     * If the argument mprio is not NULL, the priority of the selected
+     * message shall be stored in the location referenced by mprio.
+     *
+     * If the message queue is empty, receive() shall block
+     * until a message is enqueued on the message queue or until
+     * receive() is cancelled/interrupted. If more than one thread
+     * is waiting to receive a message when a message arrives at
+     * an empty queue and the Priority Scheduling option is supported,
+     * then the thread of highest priority that has been waiting the
+     * longest shall be selected to receive the message. Otherwise,
+     * it is unspecified which waiting thread receives the message.
+     *
+     * Compatible with POSIX `mq_receive()` with O_NONBLOCK not set.
+     * http://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_receive.html#
      *
      * @warning Cannot be invoked from Interrupt Service Routines.
      */
     result_t
-    Message_queue::receive (const char* msg, std::size_t nbytes,
+    Message_queue::receive (char* msg, std::size_t nbytes,
                             mqueue::priority_t* mprio)
     {
       os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(msg != nullptr, EINVAL);
+      os_assert_err(nbytes > msg_size_bytes_, EMSGSIZE);
 
-      // TODO
+      BaseType_t res = xQueueReceive(impl_, msg, portMAX_DELAY);
+      if (res != pdTRUE)
+        {
+          return ENOTRECOVERABLE;
+        }
+
+      --count_;
       return result::ok;
     }
 
     /**
      * @details
+     * The receive() function shall receive the oldest of the highest
+     * priority message(s) from the message queue. If the size of the
+     * buffer in bytes, specified by the nbytes argument, is less than
+     * the msg_size_bytes attribute of the message queue, the function
+     * shall fail and return an error. Otherwise, the selected message
+     * shall be removed from the queue and copied to the buffer pointed
+     * to by the msg argument.
+     *
+     * If the value of nbytes is greater than {SSIZE_MAX}, the result
+     * is implementation-defined.
+     *
+     * If the argument mprio is not NULL, the priority of the selected
+     * message shall be stored in the location referenced by mprio.
+     *
+     * If the message queue is empty, no message shall be removed
+     * from the queue, and receive() shall return an error.
+     *
+     * Compatible with POSIX `mq_receive()` with O_NONBLOCK set.
+     * http://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_receive.html#
      *
      * @note Can be invoked from Interrupt Service Routines.
      */
     result_t
-    Message_queue::try_receive (const char* msg, std::size_t nbytes,
+    Message_queue::try_receive (char* msg, std::size_t nbytes,
                                 mqueue::priority_t* mprio)
     {
-      // TODO return result::ok when message;
+      os_assert_err(msg != nullptr, EINVAL);
+      os_assert_err(nbytes > msg_size_bytes_, EMSGSIZE);
+
       return EAGAIN;
-    }
 
-    /**
-     * @details
-     *
-     * @warning Cannot be invoked from Interrupt Service Routines.
-     */
-    result_t
-    Message_queue::timed_receive (const char* msg, std::size_t nbytes,
-                                  mqueue::priority_t* mprio, systicks_t ticks)
-    {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      portBASE_TYPE thread_woken = pdFALSE;
 
-      // TODO return result::ok when message;
-      // TODO return ETIMEDOUT when timeout;
+      if (scheduler::is_in_isr ())
+        {
+          if (xQueueReceiveFromISR (impl_, msg, &thread_woken) != pdTRUE)
+            {
+              return EAGAIN;
+            }
+          portEND_SWITCHING_ISR(thread_woken);
+        }
+      else
+        {
+          if (xQueueReceive (impl_, msg, 0) != pdTRUE)
+            {
+              return EAGAIN;
+            }
+        }
+
+      --count_;
       return result::ok;
     }
 
     /**
      * @details
-     * Clear both send and receive counter.
+     * The receive() function shall receive the oldest of the highest
+     * priority message(s) from the message queue. If the size of the
+     * buffer in bytes, specified by the nbytes argument, is less than
+     * the msg_size_bytes attribute of the message queue, the function
+     * shall fail and return an error. Otherwise, the selected message
+     * shall be removed from the queue and copied to the buffer pointed
+     * to by the msg argument.
+     *
+     * If the value of nbytes is greater than {SSIZE_MAX}, the result
+     * is implementation-defined.
+     *
+     * If the argument mprio is not NULL, the priority of the selected
+     * message shall be stored in the location referenced by mprio.
+     *
+     * If the message queue is empty, receive() shall block
+     * until a message is enqueued on the message queue or until
+     * receive() is cancelled/interrupted. If more than one thread
+     * is waiting to receive a message when a message arrives at
+     * an empty queue and the Priority Scheduling option is supported,
+     * then the thread of highest priority that has been waiting the
+     * longest shall be selected to receive the message. Otherwise,
+     * it is unspecified which waiting thread receives the message.
+     *
+     * The timed_receive() function shall receive the oldest of
+     * the highest priority messages from the message queue as described
+     * for the receive() function. However, if no message exists on the
+     * queue to satisfy the receive, the wait for such a message shall
+     * be terminated when the specified timeout expires.
+     *
+     * The timeout shall expire after the given number of system ticks.
+     *
+     * Under no circumstance shall the operation fail with a timeout
+     * if a message can be removed from the message queue immediately.
+     * The validity of the abstime parameter need not be checked if a
+     * message can be removed from the message queue immediately.
+     *
+     * Compatible with POSIX `mq_receive()` with O_NONBLOCK set.
+     * http://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_receive.html#
+     *
+     * @warning Cannot be invoked from Interrupt Service Routines.
+     */
+    result_t
+    Message_queue::timed_receive (char* msg, std::size_t nbytes,
+                                  mqueue::priority_t* mprio, systicks_t ticks)
+    {
+      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(msg != nullptr, EINVAL);
+      os_assert_err(nbytes > msg_size_bytes_, EMSGSIZE);
+
+      BaseType_t res = xQueueReceive(impl_, msg, ticks > 0 ? ticks : 1);
+      if (res != pdTRUE)
+        {
+          return ETIMEDOUT;
+        }
+
+      --count_;
+      return result::ok;
+    }
+
+    /**
+     * @details
+     * Clear both send and receive counter and return the queue to the
+     * initial state.
      *
      * @warning Cannot be invoked from Interrupt Service Routines.
      */
     result_t
     Message_queue::reset (void)
     {
-      // TODO
+      os_assert_err(!scheduler::is_in_isr (), EPERM);
+
+      xQueueReset(impl_);
+
+      count_ = 0;
       return result::ok;
     }
 
