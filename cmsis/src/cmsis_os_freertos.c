@@ -185,9 +185,18 @@ osKernelRunning (void)
 
 #if (defined (osFeature_SysTick)  &&  (osFeature_SysTick != 0))     // System Timer available
 /**
- * @brief  Get the value of the Kernel SysTick timer
- * @param  None
- * @retval None
+ * @details
+ * Get the value of the Kernel SysTick timer for time comparison.
+ * The value is a rolling 32-bit counter that is typically composed
+ * of the kernel system interrupt timer value and an counter that
+ * counts these interrupts.
+ *
+ * This function allows the implementation of timeout checks.
+ * These are for example required when checking for a busy status
+ * in a device or peripheral initialisation routine.
+ *
+ * @warning Cannot be invoked from Interrupt Service Routines.
+ *
  * @note   MUST REMAIN UNCHANGED: \b osKernelSysTick shall be consistent in every CMSIS-RTOS.
  */
 uint32_t
@@ -205,7 +214,8 @@ osKernelSysTick (void)
 #endif    // System Timer available
 /*********************** Thread Management *****************************/
 /**
- * @brief  Create a thread and add it to Active Threads and set it to state READY.
+ * @details
+ *   Create a thread and add it to Active Threads and set it to state READY.
  * @param  thread_def    thread definition referenced with \ref osThread.
  * @param  argument      pointer that is passed to the thread function as start argument.
  * @retval thread ID for reference by other functions or NULL in case of error.
@@ -666,7 +676,7 @@ osMutexWait (osMutexId mutex_id, uint32_t millisec)
   else
 #endif
 
-    if (xSemaphoreTake (mutex_id, ticks) != pdTRUE)
+  if (xSemaphoreTake (mutex_id, ticks) != pdTRUE)
     {
       return osErrorOS;
     }
@@ -699,7 +709,7 @@ osMutexRelease (osMutexId mutex_id)
     }
   else
 #endif
-    if (xSemaphoreGive (mutex_id) != pdTRUE)
+  if (xSemaphoreGive (mutex_id) != pdTRUE)
     {
       result = osErrorOS;
     }
