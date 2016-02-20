@@ -1279,7 +1279,10 @@ namespace os
      * unlock the mutex, this wait shall be terminated when the specified
      * timeout expires.
      *
-     * The timeout shall expire after the given number of system ticks.
+     * The timeout shall expire after the number of time units (that
+     * is when the value of that clock equals or exceeds (now()+duration).
+     * The resolution of the timeout shall be the resolution of the
+     * clock on which it is based (the SysTick clock for CMSIS).
      *
      * Under no circumstance shall the function fail with a timeout
      * if the mutex can be locked immediately.
@@ -1625,6 +1628,11 @@ namespace os
      *
      * TODO: add more.
      *
+     * The timeout shall expire after the number of time units (that
+     * is when the value of that clock equals or exceeds (now()+duration).
+     * The resolution of the timeout shall be the resolution of the
+     * clock on which it is based (the SysTick clock for CMSIS).
+     *
      * @warning Cannot be invoked from Interrupt Service Routines.
      */
     result_t
@@ -1690,6 +1698,8 @@ namespace os
 
       // TODO check if initial count can be negative, to validate.
 
+      impl_ = xSemaphoreCreateCounting(max_count_, initial_count_);
+
       trace::printf ("%s() @%p %s %d %d\n", __func__, this, name (), count_,
                      max_count_);
     }
@@ -1710,7 +1720,7 @@ namespace os
     {
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
-      // TODO
+      vSemaphoreDelete(impl_);
     }
 
     /**
@@ -1745,12 +1755,15 @@ namespace os
      * http://pubs.opengroup.org/onlinepubs/9699919799/functions/sem_post.html
      *
      * @note Can be invoked from Interrupt Service Routines.
+     *
+     * @warning Applications using these functions may be subject to priority inversion.
      */
     result_t
     Semaphore::post (void)
     {
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
+#if 0
       Critical_section_irq cs; // ---- Critical section
       if (count_ > this->max_count_)
         {
@@ -1767,6 +1780,26 @@ namespace os
               list_.get_top ()->wakeup ();
             }
         }
+#else
+      portBASE_TYPE thread_woken = pdFALSE;
+
+      if (scheduler::is_in_isr ())
+        {
+          if (xSemaphoreGiveFromISR (impl_, &thread_woken) != pdTRUE)
+            {
+              return EOVERFLOW;
+            }
+          portEND_SWITCHING_ISR(thread_woken);
+        }
+      else
+        {
+          if (xSemaphoreGive (impl_) != pdTRUE)
+            {
+              return EOVERFLOW;
+            }
+        }
+      ++count_;
+#endif
       return result::ok;
     }
 
@@ -1779,11 +1812,11 @@ namespace os
      *
      * If the semaphore
      * value is currently zero, then the calling thread shall not
-     * return from the call to Semaphore::wait() until it either
+     * return from the call to wait() until it either
      * locks the semaphore or the call is interrupted by a signal.
      *
      * Upon successful return, the state of the semaphore shall
-     * be locked and shall remain locked until the Semaphore::post()
+     * be locked and shall remain locked until the post()
      * function is executed and returns successfully.
      *
      * The function is interruptible by the delivery of an external
@@ -1793,6 +1826,8 @@ namespace os
      * http://pubs.opengroup.org/onlinepubs/9699919799/functions/sem_wait.html
      *
      * @warning Cannot be invoked from Interrupt Service Routines.
+     *
+     * @warning Applications using these functions may be subject to priority inversion.
      */
     result_t
     Semaphore::wait ()
@@ -1800,7 +1835,7 @@ namespace os
       os_assert_err(!scheduler::is_in_isr (), EPERM);
 
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
-
+#if 0
         {
           Critical_section_irq cs; // ---- Critical section
 
@@ -1817,6 +1852,13 @@ namespace os
       this_thread::yield ();
 
       // Return EINTR?
+#else
+      if (xSemaphoreTake (impl_, portMAX_DELAY) != pdTRUE)
+        {
+          return ENOTRECOVERABLE;
+        }
+      --count_;
+#endif
       return result::ok;
     }
 
@@ -1828,13 +1870,15 @@ namespace os
      * Otherwise, it shall not lock the semaphore.
      *
      * Upon successful return, the state of the semaphore shall
-     * be locked and shall remain locked until the Semaphore::post()
+     * be locked and shall remain locked until the post()
      * function is executed and returns successfully.
      *
      * Compatible with POSIX `sem_trywait()`.
      * http://pubs.opengroup.org/onlinepubs/9699919799/functions/sem_wait.html
      *
-     * @warning Cannot be invoked from Interrupt Service Routines.
+     * @note Can be invoked from Interrupt Service Routines.
+     *
+     * @warning Applications using these functions may be subject to priority inversion.
      */
     result_t
     Semaphore::try_wait ()
@@ -1843,6 +1887,7 @@ namespace os
 
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
+#if 0
         {
           Critical_section_irq cs; // ---- Critical section
 
@@ -1855,6 +1900,25 @@ namespace os
           // Count may be 0 or negative
           return EAGAIN;
         }
+#else
+      portBASE_TYPE thread_woken = pdFALSE;
+
+      if (scheduler::is_in_isr ())
+        {
+          if (xSemaphoreTakeFromISR (impl_, &thread_woken) != pdTRUE)
+            {
+              return EAGAIN;
+            }
+          portEND_SWITCHING_ISR(thread_woken);
+        }
+      else if (xSemaphoreTake (impl_, 0) != pdTRUE)
+        {
+          return EAGAIN;
+        }
+
+      --count_;
+      return result::ok;
+#endif
     }
 
     /**
@@ -1871,13 +1935,17 @@ namespace os
      * clock on which it is based (the SysTick clock for CMSIS).
      *
      * Under no circumstance shall the function fail with a timeout
-     * if the semaphore can be locked immediately.
+     * if the semaphore can be locked immediately. The validity of
+     * the timeout need not be checked if the semaphore can be
+     * locked immediately.
      *
      * Compatible with POSIX `sem_timedwait()`, except the time point
      * is replaced with a duration.
      * http://pubs.opengroup.org/onlinepubs/9699919799/functions/sem_timedwait.html
      *
      * @warning Cannot be invoked from Interrupt Service Routines.
+     *
+     * @warning Applications using these functions may be subject to priority inversion.
      */
     result_t
     Semaphore::timed_wait (systicks_t ticks)
@@ -1885,6 +1953,8 @@ namespace os
       os_assert_err(!scheduler::is_in_isr (), EPERM);
 
       trace::printf ("%s(%d_ticks) @%p %s\n", __func__, ticks, this, name ());
+
+#if 0
         {
           Critical_section_irq cs; // ---- Critical section
 
@@ -1901,6 +1971,15 @@ namespace os
 
       // TODO: return EINTR
       return ETIMEDOUT;
+#else
+      if (xSemaphoreTake (impl_, ticks > 0 ? ticks : 1) != pdTRUE)
+        {
+          return ETIMEDOUT;
+        }
+
+      --count_;
+      return result::ok;
+#endif
     }
 
     /**
@@ -2266,7 +2345,10 @@ namespace os
      * room in the queue shall be terminated when the specified timeout
      * expires.
      *
-     * The timeout shall expire after the given number of system ticks.
+     * The timeout shall expire after the number of time units (that
+     * is when the value of that clock equals or exceeds (now()+duration).
+     * The resolution of the timeout shall be the resolution of the
+     * clock on which it is based (the SysTick clock for CMSIS).
      *
      * Under no circumstance shall the operation fail with a timeout
      * if there is sufficient room in the queue to add the message
@@ -2435,7 +2517,10 @@ namespace os
      * queue to satisfy the receive, the wait for such a message shall
      * be terminated when the specified timeout expires.
      *
-     * The timeout shall expire after the given number of system ticks.
+     * The timeout shall expire after the number of time units (that
+     * is when the value of that clock equals or exceeds (now()+duration).
+     * The resolution of the timeout shall be the resolution of the
+     * clock on which it is based (the SysTick clock for CMSIS).
      *
      * Under no circumstance shall the operation fail with a timeout
      * if a message can be removed from the message queue immediately.
