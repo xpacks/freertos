@@ -552,6 +552,21 @@ namespace os
         taskYIELD();
       }
 
+      /**
+       * @details
+       * Remove the current thread from the ready list and pass
+       * control to the next thread that is in \b READY state.
+       *
+       * @warning Cannot be invoked from Interrupt Service Routines.
+       */
+      void
+      suspend (void)
+      {
+        os_assert_throw(!scheduler::in_handler_mode (), EPERM);
+
+        this_thread::thread ().suspend ();
+      }
+
     } /* namespace this_thread */
 
 // ======================================================================
@@ -730,6 +745,14 @@ namespace os
 #endif
     }
 
+    void
+    Thread::suspend (void)
+    {
+      trace::printf ("%s() @%p %s\n", __func__, this, name ());
+
+      vTaskSuspend (impl_);
+    }
+
     /**
      * @details
      * Internal, no POSIX equivalent.
@@ -853,7 +876,7 @@ namespace os
       // TODO optimise it to use events instead of sleep_for().
       for (;;)
         {
-          if (state_ == thread::state::terminated)
+          if (sched_state_ == thread::state::terminated)
             {
               break;
             }
@@ -923,6 +946,12 @@ namespace os
       return result::ok;
     }
 
+    bool
+    Thread::interrupted (void)
+    {
+      return false;
+    }
+
     /**
      * @details
      * Terminate the calling thread and make the value value_ptr
@@ -966,7 +995,7 @@ namespace os
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
       func_result_ = value_ptr;
-      state_ = thread::state::terminated;
+      sched_state_ = thread::state::terminated;
 
       xEventGroupSetBits (impl_event_flags_, 1);
 
@@ -2037,13 +2066,41 @@ namespace os
     {
       os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
-      pool_addr_ = attr.mp_pool_address;
+      pool_addr_ = (char*) attr.mp_pool_address;
 
       assert(blocks_ > 0);
-      assert(block_size_bytes_ >= sizeof(mempool::size_t));
+      // Blocks must be large enough to store the index, used
+      // to construct the list of free blocks.
+      assert(block_size_bytes_ >= sizeof(std::ptrdiff_t));
+
+      flags_ = 0;
 
       trace::printf ("%s() @%p %s %d %d\n", __func__, this, name (), blocks_,
                      block_size_bytes_);
+
+      if (pool_addr_ == nullptr)
+        {
+          pool_addr_ = new (std::nothrow) char[blocks_ * block_size_bytes_];
+          flags_ |= flags_allocated;
+        }
+
+      os_assert_throw(pool_addr_ != nullptr, ENOMEM);
+
+      // Construct a linked list of blocks. Store the pointer at
+      // the beginning of each block. Each block
+      // will hold the address of the next free block, or nullptr at the end.
+      char* p = pool_addr_;
+      for (std::size_t i = 1; i < blocks_; ++i)
+        {
+          *(void**) p = (p + block_size_bytes_);
+          p += block_size_bytes_;
+        }
+      *(void**) p = nullptr;
+
+      first_ = pool_addr_; // Pointer to first block.
+      last_ = p; // Pointer to last block.
+
+      count_ = 0; // No allocated blocks.
     }
 
     /**
@@ -2053,7 +2110,27 @@ namespace os
     {
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
-      // TODO
+      if (flags_ | flags_allocated)
+        {
+          delete[] (pool_addr_);
+        }
+    }
+
+    /*
+     * Internal function used to return the first block in the
+     * free list.
+     */
+    void*
+    Memory_pool::try_first (void)
+    {
+      if (first_ != nullptr)
+        {
+          void* p = (void*) first_;
+          first_ = *(void**) first_;
+          ++count_;
+          return p;
+        }
+      return nullptr;
     }
 
     /**
@@ -2072,7 +2149,35 @@ namespace os
 
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
-      // TODO
+      bool queued = false;
+      for (;;)
+        {
+            {
+              Critical_section_irq cs; // ---- Critical section
+
+              void* p = try_first ();
+              if (p != nullptr)
+                {
+                  return p;
+                }
+
+              if (!queued)
+                {
+                  // Add this thread to the waiting list.
+                  // Will be removed by free().
+                  list_.add (&this_thread::thread ());
+                  queued = true;
+                }
+            }
+          this_thread::suspend ();
+
+          if (this_thread::thread ().interrupted ())
+            {
+              return nullptr;
+            }
+        }
+
+      /* NOTREACHED */
       return nullptr;
     }
 
@@ -2090,8 +2195,7 @@ namespace os
     {
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
-      // TODO
-      return nullptr;
+      return try_first ();
     }
 
     /**
@@ -2110,7 +2214,50 @@ namespace os
 
       trace::printf ("%s(%d) @%p %s\n", __func__, ticks, this, name ());
 
-      // TODO
+      bool queued = false;
+
+      Systick_clock::rep start = Systick_clock::now ();
+      for (;;)
+        {
+          Systick_clock::sleep_rep slept_ticks;
+            {
+              Critical_section_irq cs; // ---- Critical section
+
+              void* p = try_first ();
+              if (p != nullptr)
+                {
+                  return p;
+                }
+
+              Systick_clock::rep now = Systick_clock::now ();
+              slept_ticks = (Systick_clock::sleep_rep) (now - start);
+              if (slept_ticks >= ticks)
+                {
+                  if (queued)
+                    {
+                      list_.remove (&this_thread::thread ());
+                    }
+                  return nullptr;
+                }
+
+              if (!queued)
+                {
+                  // Add this thread to the waiting list.
+                  // Will be removed by free() or if timeout occurs.
+                  list_.add (&this_thread::thread ());
+                  queued = true;
+                }
+            }
+
+          Systick_clock::sleep_for (ticks - slept_ticks);
+
+          if (this_thread::thread ().interrupted ())
+            {
+              return nullptr;
+            }
+        }
+
+      /* NOTREACHED */
       return nullptr;
     }
 
@@ -2129,7 +2276,44 @@ namespace os
     {
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
-      // TODO
+      // Validate pointer.
+      if ((block < pool_addr_)
+          || (block >= (pool_addr_ + blocks_ * block_size_bytes_)))
+        {
+          return EINVAL;
+        }
+
+      Critical_section_irq cs; // ---- Critical section
+
+      // Perform a push_back() on the single linked FIFO list,
+      // i.e. add the block to the end of the list.
+      if (last_ != nullptr)
+        {
+          // Link the block after the current last.
+          *(void**) last_ = block;
+        }
+
+      // Mark block as end of list.
+      *(void**) block = nullptr;
+
+      // Now this block is the last one.
+      last_ = block;
+
+      // If the list was empty (all blocks were allocated, so no first),
+      // this block will be both the first and the last.
+      if (first_ == nullptr)
+        {
+          first_ = block;
+        }
+
+      --count_;
+
+      if (!list_.empty ())
+        {
+          // Wake-up one thread, if any.
+          list_.get_top ()->wakeup ();
+        }
+
       return result::ok;
     }
 
