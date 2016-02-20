@@ -21,8 +21,8 @@
  * replacement for C++ applications.
  */
 
-#ifndef CMSIS_PLUS_RTOS_OS_IMPL_H_
-#define CMSIS_PLUS_RTOS_OS_IMPL_H_
+#ifndef CMSIS_PLUS_RTOS_OS_IMPL_DECLS_H_
+#define CMSIS_PLUS_RTOS_OS_IMPL_DECLS_H_
 
 // ----------------------------------------------------------------------------
 
@@ -105,4 +105,4 @@ namespace os
 
 #endif /* __cplusplus */
 
-#endif /* CMSIS_PLUS_RTOS_OS_IMPL_H_ */
+#endif /* CMSIS_PLUS_RTOS_OS_IMPL_DECLS_H_ */

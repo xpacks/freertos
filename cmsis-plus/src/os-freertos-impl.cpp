@@ -19,12 +19,7 @@
 #include <cmsis-plus/rtos/os.h>
 #include <cmsis-plus/diag/trace.h>
 
-#include <FreeRTOS.h>
-#include "task.h"
-#include "event_groups.h"
-#include "semphr.h"
-
-#include <cmsis_device.h>
+#include <cmsis-plus/rtos/os-impl-inlines.h>
 
 // ----------------------------------------------------------------------------
 
@@ -158,6 +153,7 @@ namespace os
   {
 
 #pragma GCC diagnostic push
+// TODO: remove it when fully implemented
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
     // ======================================================================
@@ -248,7 +244,7 @@ namespace os
     result_t
     Systick_clock::sleep_for (Systick_clock::sleep_rep ticks)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("Systick_clock::sleep_for(%d_ticks)\n", ticks);
 
@@ -279,7 +275,7 @@ namespace os
     result_t
     Realtime_clock::sleep_for (Realtime_clock::sleep_rep secs)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("Realtime_clock::sleep_for(%ds)\n", secs);
       __rtc_now += secs;
@@ -300,11 +296,11 @@ namespace os
       result_t
       initialize (void)
       {
-        os_assert_err(!scheduler::is_in_isr (), EPERM);
+        os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
-        // TODO
         trace::printf ("%s() \n", __func__);
-        return result::ok;
+
+        return impl::scheduler::initialize ();
       }
 
       /**
@@ -312,7 +308,7 @@ namespace os
        * @note Can be invoked from Interrupt Service Routines (obviously).
        */
       bool
-      is_in_isr (void)
+      in_handler_mode (void)
       {
         // In Handler mode, IPSR holds the exception number.
         // If 0, the core is in thread mode.
@@ -329,17 +325,14 @@ namespace os
       result_t
       start (void)
       {
-        os_assert_err(!scheduler::is_in_isr (), EPERM);
+        os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
         trace::printf ("%s() \n", __func__);
 
-        // TODO
         is_started_ = true;
         is_locked_ = false;
 
-        vTaskStartScheduler ();
-
-        return result::ok;
+        return impl::scheduler::start ();
       }
 
       /**
@@ -352,9 +345,9 @@ namespace os
       status_t
       lock (void)
       {
-        os_assert_throw(!scheduler::is_in_isr (), EPERM);
+        os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
-        vTaskSuspendAll ();
+        impl::scheduler::lock ();
 
         status_t tmp = is_locked_;
         is_locked_ = true;
@@ -373,12 +366,13 @@ namespace os
       status_t
       unlock (status_t status)
       {
-        os_assert_throw(!scheduler::is_in_isr (), EPERM);
+        os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
         status_t tmp = is_locked_;
-        is_locked_ = status;
 
-        xTaskResumeAll ();
+        impl::scheduler::unlock (status);
+
+        is_locked_ = status;
 
         return tmp;
       }
@@ -463,7 +457,7 @@ namespace os
       result_t
       clear (Thread& thread, event_flags_t flags, event_flags_t* out_flags)
       {
-        os_assert_err(!scheduler::is_in_isr (), EPERM);
+        os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
         return result::ok;
       }
@@ -476,7 +470,7 @@ namespace os
       result_t
       wait (event_flags_t flags, event_flags_t* out_flags)
       {
-        os_assert_err(!scheduler::is_in_isr (), EPERM);
+        os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
         return result::ok;
       }
@@ -501,7 +495,7 @@ namespace os
       timed_wait (event_flags_t flags, event_flags_t* out_flags,
                   systicks_t ticks)
       {
-        os_assert_err(!scheduler::is_in_isr (), EPERM);
+        os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
         return result::ok;
       }
@@ -534,7 +528,7 @@ namespace os
       Thread&
       thread (void)
       {
-        os_assert_throw(!scheduler::is_in_isr (), EPERM);
+        os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
         TaskHandle_t th = xTaskGetCurrentTaskHandle ();
 
@@ -553,7 +547,7 @@ namespace os
       void
       yield (void)
       {
-        os_assert_throw(!scheduler::is_in_isr (), EPERM);
+        os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
         taskYIELD();
       }
@@ -658,7 +652,7 @@ namespace os
         Named_object
           { attr.name () }
     {
-      os_assert_throw(!scheduler::is_in_isr (), EPERM);
+      os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
       assert(function != nullptr);
       assert(attr.th_priority != thread::priority::none);
@@ -781,7 +775,7 @@ namespace os
     thread::priority_t
     Thread::sched_prio (void)
     {
-      os_assert_err(!scheduler::is_in_isr (), thread::priority::error);
+      os_assert_err(!scheduler::in_handler_mode (), thread::priority::error);
 
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
@@ -812,7 +806,7 @@ namespace os
     result_t
     Thread::sched_prio (thread::priority_t prio)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       assert(prio != thread::priority::none);
 
@@ -852,7 +846,7 @@ namespace os
     result_t
     Thread::join (void** exit_ptr)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
@@ -896,7 +890,7 @@ namespace os
     result_t
     Thread::detach (void)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
@@ -921,7 +915,7 @@ namespace os
     result_t
     Thread::cancel (void)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
@@ -967,7 +961,7 @@ namespace os
     void
     Thread::exit (void* value_ptr)
     {
-      os_assert_throw(!scheduler::is_in_isr (), EPERM);
+      os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
@@ -1020,7 +1014,7 @@ namespace os
           { attr.name () }
 
     {
-      os_assert_throw(!scheduler::is_in_isr (), EPERM);
+      os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
       assert(function != nullptr);
 
@@ -1051,7 +1045,7 @@ namespace os
     result_t
     Timer::start (systicks_t ticks)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s(%d) @%p \n", __func__, ticks, this);
       // TODO
@@ -1066,7 +1060,7 @@ namespace os
     result_t
     Timer::stop (void)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p \n", __func__, this);
       // TODO
@@ -1118,7 +1112,7 @@ namespace os
         protocol_ (attr.mx_protocol), //
         robustness_ (attr.mx_robustness) //
     {
-      os_assert_throw(!scheduler::is_in_isr (), EPERM);
+      os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
       prio_ceiling_ = attr.mx_priority_ceiling;
       owner_ = nullptr;
@@ -1192,7 +1186,7 @@ namespace os
     result_t
     Mutex::lock (void)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p \n", __func__, this);
 
@@ -1248,7 +1242,7 @@ namespace os
     result_t
     Mutex::try_lock (void)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p \n", __func__, this);
 
@@ -1306,7 +1300,7 @@ namespace os
     result_t
     Mutex::timed_lock (systicks_t ticks)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s(%d_ticks) @%p \n", __func__, ticks, this);
 
@@ -1349,7 +1343,7 @@ namespace os
     result_t
     Mutex::unlock (void)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p \n", __func__, this);
 
@@ -1383,7 +1377,7 @@ namespace os
     thread::priority_t
     Mutex::prio_ceiling (void) const
     {
-      assert(!scheduler::is_in_isr ());
+      assert(!scheduler::in_handler_mode ());
 
       trace::printf ("%s() @%p \n", __func__, this);
 
@@ -1412,7 +1406,7 @@ namespace os
     Mutex::prio_ceiling (thread::priority_t prio_ceiling,
                          thread::priority_t* old_prio_ceiling)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p \n", __func__, this);
 
@@ -1458,7 +1452,7 @@ namespace os
     result_t
     Mutex::consistent (void)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p \n", __func__, this);
       // TODO
@@ -1494,7 +1488,7 @@ namespace os
         Named_object
           { attr.name () }
     {
-      os_assert_throw(!scheduler::is_in_isr (), EPERM);
+      os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p \n", __func__, this);
     }
@@ -1546,7 +1540,7 @@ namespace os
     result_t
     Condition_variable::signal ()
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p \n", __func__, this);
       // TODO
@@ -1589,7 +1583,7 @@ namespace os
     result_t
     Condition_variable::broadcast ()
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p \n", __func__, this);
       // TODO
@@ -1611,7 +1605,7 @@ namespace os
     result_t
     Condition_variable::wait (Mutex& mutex)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p \n", __func__, this);
       // TODO
@@ -1638,7 +1632,7 @@ namespace os
     result_t
     Condition_variable::timed_wait (Mutex& mutex, systicks_t ticks)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s(%d_ticks) @%p \n", __func__, ticks, this);
       // TODO
@@ -1689,7 +1683,7 @@ namespace os
         initial_count_ (attr.sm_initial_count), //
         max_count_ (attr.sm_max_count)
     {
-      os_assert_throw(!scheduler::is_in_isr (), EPERM);
+      os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
       assert(max_count_ > 0);
       assert(attr.sm_initial_count <= max_count_);
@@ -1783,7 +1777,7 @@ namespace os
 #else
       portBASE_TYPE thread_woken = pdFALSE;
 
-      if (scheduler::is_in_isr ())
+      if (scheduler::in_handler_mode ())
         {
           if (xSemaphoreGiveFromISR (impl_, &thread_woken) != pdTRUE)
             {
@@ -1832,7 +1826,7 @@ namespace os
     result_t
     Semaphore::wait ()
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 #if 0
@@ -1883,7 +1877,7 @@ namespace os
     result_t
     Semaphore::try_wait ()
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
@@ -1903,7 +1897,7 @@ namespace os
 #else
       portBASE_TYPE thread_woken = pdFALSE;
 
-      if (scheduler::is_in_isr ())
+      if (scheduler::in_handler_mode ())
         {
           if (xSemaphoreTakeFromISR (impl_, &thread_woken) != pdTRUE)
             {
@@ -1950,7 +1944,7 @@ namespace os
     result_t
     Semaphore::timed_wait (systicks_t ticks)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s(%d_ticks) @%p %s\n", __func__, ticks, this, name ());
 
@@ -1991,7 +1985,7 @@ namespace os
     result_t
     Semaphore::reset (void)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       Critical_section_irq cs; // ---- Critical section
 
@@ -2038,7 +2032,7 @@ namespace os
         Named_object
           { attr.name () }
     {
-      os_assert_throw(!scheduler::is_in_isr (), EPERM);
+      os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
       pool_addr_ = attr.mp_pool_address;
       blocks_ = blocks;
@@ -2073,7 +2067,7 @@ namespace os
     void*
     Memory_pool::alloc (void)
     {
-      os_assert_throw(!scheduler::is_in_isr (), EPERM);
+      os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
@@ -2111,7 +2105,7 @@ namespace os
     void*
     Memory_pool::timed_alloc (systicks_t ticks)
     {
-      os_assert_throw(!scheduler::is_in_isr (), EPERM);
+      os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s(%d) @%p %s\n", __func__, ticks, this, name ());
 
@@ -2147,7 +2141,7 @@ namespace os
     result_t
     Memory_pool::reset (void)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
@@ -2187,7 +2181,7 @@ namespace os
         msgs_ (msgs), //
         msg_size_bytes_ (msg_size_bytes)
     {
-      os_assert_throw(!scheduler::is_in_isr (), EPERM);
+      os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
       queue_addr_ = attr.queue_address;
       queue_size_bytes_ = attr.queue_size_bytes;
@@ -2256,7 +2250,7 @@ namespace os
     Message_queue::send (const char* msg, std::size_t nbytes,
                          mqueue::priority_t mprio)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
       os_assert_err(msg != nullptr, EINVAL);
       os_assert_err(nbytes > msg_size_bytes_, EINVAL);
 
@@ -2305,7 +2299,7 @@ namespace os
 
       portBASE_TYPE thread_woken = pdFALSE;
 
-      if (scheduler::is_in_isr ())
+      if (scheduler::in_handler_mode ())
         {
           if (xQueueSendFromISR (impl_, msg, &thread_woken) != pdTRUE)
             {
@@ -2367,7 +2361,7 @@ namespace os
     Message_queue::timed_send (const char* msg, std::size_t nbytes,
                                mqueue::priority_t mprio, systicks_t ticks)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
       os_assert_err(msg != nullptr, EINVAL);
       os_assert_err(nbytes > msg_size_bytes_, EINVAL);
 
@@ -2417,7 +2411,7 @@ namespace os
     Message_queue::receive (char* msg, std::size_t nbytes,
                             mqueue::priority_t* mprio)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
       os_assert_err(msg != nullptr, EINVAL);
       os_assert_err(nbytes > msg_size_bytes_, EMSGSIZE);
 
@@ -2466,7 +2460,7 @@ namespace os
 
       portBASE_TYPE thread_woken = pdFALSE;
 
-      if (scheduler::is_in_isr ())
+      if (scheduler::in_handler_mode ())
         {
           if (xQueueReceiveFromISR (impl_, msg, &thread_woken) != pdTRUE)
             {
@@ -2536,7 +2530,7 @@ namespace os
     Message_queue::timed_receive (char* msg, std::size_t nbytes,
                                   mqueue::priority_t* mprio, systicks_t ticks)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
       os_assert_err(msg != nullptr, EINVAL);
       os_assert_err(nbytes > msg_size_bytes_, EMSGSIZE);
 
@@ -2560,7 +2554,7 @@ namespace os
     result_t
     Message_queue::reset (void)
     {
-      os_assert_err(!scheduler::is_in_isr (), EPERM);
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       xQueueReset(impl_);
 
