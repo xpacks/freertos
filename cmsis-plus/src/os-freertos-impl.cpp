@@ -166,7 +166,7 @@ namespace os
     Systick_clock::rep
     Systick_clock::now (void)
     {
-      Critical_section_irq cs;
+      Critical_section_irq cs; // ---- Critical section -----
 
       // Prevent inconsistent values using the critical section.
       return __systick_now;
@@ -203,7 +203,7 @@ namespace os
       uint64_t ticks;
       uint32_t val;
         {
-          Critical_section_irq cs;
+          Critical_section_irq cs; // ----- Critical section -----
 
           // Sample ticks counter inside critical section.
           ticks = __systick_now;
@@ -1787,7 +1787,7 @@ namespace os
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
 #if 0
-      Critical_section_irq cs; // ---- Critical section
+      Critical_section_irq cs; // ----- Critical section -----
       if (count_ > this->max_count_)
         {
           return EOVERFLOW;
@@ -1860,7 +1860,7 @@ namespace os
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 #if 0
         {
-          Critical_section_irq cs; // ---- Critical section
+          Critical_section_irq cs; // ----- Critical section ------
 
           --count_;
           if (count_ >= 0)
@@ -1912,7 +1912,7 @@ namespace os
 
 #if 0
         {
-          Critical_section_irq cs; // ---- Critical section
+          Critical_section_irq cs; // ----- Critical section -----
 
           if (count_ > 0)
             {
@@ -1979,7 +1979,7 @@ namespace os
 
 #if 0
         {
-          Critical_section_irq cs; // ---- Critical section
+          Critical_section_irq cs; // ----- Critical section -----
 
           --count_;
           if (count_ >= 0)
@@ -2016,7 +2016,7 @@ namespace os
     {
       os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
-      Critical_section_irq cs; // ---- Critical section
+      Critical_section_irq cs; // ----- Critical section -----
 
       if (count_ < 0)
         {
@@ -2153,7 +2153,7 @@ namespace os
       for (;;)
         {
             {
-              Critical_section_irq cs; // ---- Critical section
+              Critical_section_irq cs; // ----- Critical section -----
 
               void* p = try_first ();
               if (p != nullptr)
@@ -2221,7 +2221,7 @@ namespace os
         {
           Systick_clock::sleep_rep slept_ticks;
             {
-              Critical_section_irq cs; // ---- Critical section
+              Critical_section_irq cs; // ----- Critical section -----
 
               void* p = try_first ();
               if (p != nullptr)
@@ -2283,7 +2283,7 @@ namespace os
           return EINVAL;
         }
 
-      Critical_section_irq cs; // ---- Critical section
+      Critical_section_irq cs; // ----- Critical section -----
 
       // Perform a push_back() on the single linked FIFO list,
       // i.e. add the block to the end of the list.
