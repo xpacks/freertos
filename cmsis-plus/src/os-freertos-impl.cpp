@@ -2030,16 +2030,17 @@ namespace os
                               mempool::size_t blocks,
                               mempool::size_t block_size_bytes) :
         Named_object
-          { attr.name () }
+          { attr.name () }, //
+        blocks_ (blocks), //
+        block_size_bytes_ (block_size_bytes)
+
     {
       os_assert_throw(!scheduler::in_handler_mode (), EPERM);
 
       pool_addr_ = attr.mp_pool_address;
-      blocks_ = blocks;
-      block_size_bytes_ = block_size_bytes;
 
       assert(blocks_ > 0);
-      assert(block_size_bytes_ > 0);
+      assert(block_size_bytes_ >= sizeof(mempool::size_t));
 
       trace::printf ("%s() @%p %s %d %d\n", __func__, this, name (), blocks_,
                      block_size_bytes_);
