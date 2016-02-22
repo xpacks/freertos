@@ -871,9 +871,10 @@ namespace os
     {
       os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
+      // TODO: Must fail if current thread
+
       trace::printf ("%s() @%p %s\n", __func__, this, name ());
 
-      // TODO optimise it to use events instead of sleep_for().
       for (;;)
         {
           if (sched_state_ == thread::state::terminated)
@@ -2775,9 +2776,29 @@ namespace os
       }
 
       void
+      Prioritised_list::remove (std::size_t pos)
+      {
+        for (std::size_t i = pos; i < (sizeof(array_) / sizeof(array_[0]) - 2);
+            ++i)
+          {
+            array_[i] = array_[i + 1];
+          }
+        count_--;
+        array_[count_] = nullptr;
+      }
+
+      void
       Prioritised_list::remove (Thread* thread)
       {
-        // TODO
+
+        for (std::size_t i = 0; i < sizeof(array_) / sizeof(array_[0]); ++i)
+          {
+            if (array_[i] == thread)
+              {
+                remove(i);
+                return;
+              }
+          }
       }
 
       Thread*
@@ -2797,13 +2818,7 @@ namespace os
               }
           }
 
-        for (std::size_t i = pos; i < (sizeof(array_) / sizeof(array_[0]) - 2);
-            ++i)
-          {
-            array_[i] = array_[i + 1];
-          }
-        count_--;
-        array_[count_] = nullptr;
+        remove(pos);
 
         return thread;
       }

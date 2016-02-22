@@ -45,24 +45,28 @@ namespace os
     {
       // ----------------------------------------------------------------------
 
-      // Simple collection of threads, ordered by priorities.
-      class Prioritised_list
+      // Simple list of threads.
+      class Tasks_list
       {
       public:
 
-        Prioritised_list ();
-        ~Prioritised_list ();
+        Tasks_list ();
+        ~Tasks_list ();
 #if 1
         void
         add (Thread* thread);
         void
         remove (Thread* thread);
 
+        /**
+         * @brief Get top priority task.
+         * @return Pointer to task.
+         */
         Thread*
-        get_top (void);
+        top_task (void);
 
         std::size_t
-        get_length ();
+        length ();
 
         // TODO add iterator begin(), end()
 
@@ -90,7 +94,7 @@ namespace os
       // ----------------------------------------------------------------------
 
       inline std::size_t
-      Prioritised_list::get_length ()
+      Tasks_list::get_length ()
       {
         return count_;
       }
