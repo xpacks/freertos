@@ -41,7 +41,7 @@ namespace os
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
     // ========================================================================
-
+#if 0
     // ----- Signal flags -----
 
     namespace flags
@@ -109,6 +109,7 @@ namespace os
       }
 
     } /* namespace flags */
+#endif
 
     // ========================================================================
 

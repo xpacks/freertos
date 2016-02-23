@@ -136,8 +136,16 @@ namespace os
       return cm_prio;
     }
 
+    /**
+     * @details
+     * Same as in POSIX, thread functions can return, and the behaviour
+     * should be as the thread called the exit() function.
+     *
+     * This requires a proxy to run the thread function, get the result,
+     * and explicitly invoke exit().
+     */
     void
-    Thread::trampoline (Thread* thread)
+    Thread::_invoke_with_exit (Thread* thread)
     {
       thread->exit (thread->func_ (thread->func_args_));
     }
@@ -208,6 +216,8 @@ namespace os
       func_ = function;
       func_args_ = args;
 
+      sig_mask_ = 0;
+
       trace::printf ("%s @%p %s\n", __func__, this, name ());
 
 #if 0
@@ -236,7 +246,7 @@ namespace os
 #pragma GCC diagnostic pop
 
       TaskHandle_t th;
-      res = xTaskCreate((TaskFunction_t ) trampoline,
+      res = xTaskCreate((TaskFunction_t ) _invoke_with_exit,
                         (const portCHAR *) name (), stack_size_words, this,
                         makeFreeRtosPriority (prio_), &th);
       assert(res == pdPASS);
@@ -532,16 +542,260 @@ namespace os
       vTaskDelete (nullptr);
     }
 
-#if defined(TESTING)
-    void
-    Thread::__run_function (void)
+    /**
+     * @details
+     * Set more signal bits in the thread current signal mask.
+     * Use OR at bit-mask level.
+     * Wake-up the thread to evaluate the signals.
+     *
+     * @note Can be invoked from Interrupt Service Routines.
+     */
+    result_t
+    Thread::sig_raise (thread::sigset_t mask, thread::sigset_t* omask)
     {
-      assert(func_ != nullptr);
-      func_ (func_args_);
-    }
-#endif
+      os_assert_err(mask != 0, EINVAL);
 
-  // --------------------------------------------------------------------------
+      Critical_section_irq cs; // ----- Critical section -----
+
+      if (omask != nullptr)
+        {
+          *omask = sig_mask_;
+        }
+
+      sig_mask_ |= mask;
+
+      wakeup ();
+
+      return result::ok;
+    }
+
+    /**
+     * @details
+     * Select the requested bits from the thread current signal mask
+     * and return them. If requested, clear all the selected bits in the
+     * thread signal mask.
+     *
+     * If the mask is zero, return the full thread signal mask,
+     * without any masking or subsequent clearing.
+     *
+     * @warning Cannot be invoked from Interrupt Service Routines.
+     */
+    thread::sigset_t
+    Thread::sig_get (thread::sigset_t mask, bool clear)
+    {
+      os_assert_err(!scheduler::in_handler_mode (), sig::error);
+
+      Critical_section_irq cs; // ----- Critical section -----
+
+      if (mask == 0)
+        {
+          // Return the entire mask.
+          return sig_mask_;
+        }
+
+      thread::sigset_t ret = sig_mask_ & mask;
+      if (clear)
+        {
+          // Clear the selected bits; leave the rest untouched.
+          sig_mask_ &= ~mask;
+        }
+
+      // Return the selected bits.
+      return ret;
+    }
+
+    /**
+     * @details
+     *
+     * @warning Cannot be invoked from Interrupt Service Routines.
+     */
+    result_t
+    Thread::sig_clear (thread::sigset_t mask, thread::sigset_t* omask)
+    {
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
+      os_assert_err(mask != 0, EINVAL);
+
+      Critical_section_irq cs; // ----- Critical section -----
+
+      if (omask != nullptr)
+        {
+          *omask = sig_mask_;
+        }
+
+      // Clear the selected bits; leave the rest untouched.
+      sig_mask_ &= ~mask;
+
+      return result::ok;
+    }
+
+    /**
+     * @details
+     *
+     * Internal function used to test if the desired signal flags are raised.
+     */
+    result_t
+    Thread::_try_wait (thread::sigset_t mask, thread::sigset_t* omask)
+    {
+      if (mask == 0)
+        {
+          // Any signal will do it.
+          if (sig_mask_ != 0)
+            {
+              // Possibly return .
+              if (omask != nullptr)
+                {
+                  *omask = sig_mask_;
+                }
+              // Since we returned them all, also clear them all.
+              sig_mask_ = 0;
+              return result::ok;
+            }
+        }
+      else
+        {
+          // Only if all desires signals are raised we're done.
+          if ((sig_mask_ & mask) == mask)
+            {
+              if (omask != nullptr)
+                {
+                  *omask = sig_mask_;
+                }
+              // Clear desired signals.
+              sig_mask_ &= ~mask;
+              return result::ok;
+            }
+        }
+
+      return EAGAIN;
+    }
+
+    /**
+     * @details
+     * Suspend the execution of the thread until all
+     * specified signal flags are raised. If these signal flags are
+     * already raised, the function returns instantly.
+     *
+     * When the parameter mask is 0, the current RUNNING thread is suspended
+     * until any signal flag is raised. In this case, if any signals are
+     * already raised, the function returns instantly.
+     *
+     * Signal flags that are returned are automatically cleared.
+     *
+     * @warning Cannot be invoked from Interrupt Service Routines.
+     */
+    result_t
+    Thread::sig_wait (thread::sigset_t mask, thread::sigset_t* omask)
+    {
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
+
+      for (;;)
+        {
+            {
+              Critical_section_irq cs; // ----- Critical section -----
+
+              if (_try_wait (mask, omask) == result::ok)
+                {
+                  return result::ok;
+                }
+            }
+
+          suspend ();
+
+          if (interrupted ())
+            {
+              return EINTR;
+            }
+        }
+      return ENOTRECOVERABLE;
+    }
+
+    /**
+     * @details
+     * If all given signal flags are raised, the function
+     * returns success and clears the given signal flags.
+     *
+     * When the parameter mask is 0, if any signal flag is
+     * raised, the function returns success and clears all flags.
+     *
+     * @warning Cannot be invoked from Interrupt Service Routines.
+     */
+    result_t
+    Thread::try_sig_wait (thread::sigset_t mask, thread::sigset_t* omask)
+    {
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
+
+      Critical_section_irq cs; // ----- Critical section -----
+
+      return _try_wait (mask, omask);
+    }
+
+    /**
+     * @details
+     * Suspend the execution of the thread until all
+     * specified signal flags are raised. When these signal flags are
+     * already raised, the function returns instantly.
+     *
+     * When the parameter mask is 0, the thread is suspended
+     * until any signal flag is raised. In this case, if any signals are
+     * already raised, the function returns instantly.
+     *
+     * The wait shall be terminated when the specified timeout
+     * expires.
+     *
+     * The timeout shall expire after the number of time units (that
+     * is when the value of that clock equals or exceeds (now()+duration).
+     * The resolution of the timeout shall be the resolution of the
+     * clock on which it is based (the SysTick clock for CMSIS).
+     *
+     * Under no circumstance shall the operation fail with a timeout
+     * if the signal flags are already raised
+     *
+     * Signal flags that are returned are automatically cleared.
+     *
+     * @warning Cannot be invoked from Interrupt Service Routines.
+     */
+    result_t
+    Thread::timed_sig_wait (thread::sigset_t mask, thread::sigset_t* omask,
+                            systicks_t ticks)
+    {
+      os_assert_err(!scheduler::in_handler_mode (), EPERM);
+
+      if (ticks == 0)
+        {
+          ticks = 1;
+        }
+
+      Systick_clock::rep start = Systick_clock::now ();
+      for (;;)
+        {
+          Systick_clock::sleep_rep slept_ticks;
+            {
+              Critical_section_irq cs; // ----- Critical section -----
+
+              if (_try_wait (mask, omask) == result::ok)
+                {
+                  return result::ok;
+                }
+            }
+
+          Systick_clock::rep now = Systick_clock::now ();
+          slept_ticks = (Systick_clock::sleep_rep) (now - start);
+          if (slept_ticks >= ticks)
+            {
+              return ETIMEDOUT;
+            }
+
+          Systick_clock::sleep_for (ticks - slept_ticks);
+
+          if (interrupted ())
+            {
+              return EINTR;
+            }
+        }
+      return ENOTRECOVERABLE;
+    }
+
+// --------------------------------------------------------------------------
 
 #pragma GCC diagnostic pop
 
