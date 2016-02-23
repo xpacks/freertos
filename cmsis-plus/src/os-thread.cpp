@@ -551,15 +551,15 @@ namespace os
      * @note Can be invoked from Interrupt Service Routines.
      */
     result_t
-    Thread::sig_raise (thread::sigset_t mask, thread::sigset_t* omask)
+    Thread::sig_raise (thread::sigset_t mask, thread::sigset_t* oflags)
     {
       os_assert_err(mask != 0, EINVAL);
 
       Critical_section_irq cs; // ----- Critical section -----
 
-      if (omask != nullptr)
+      if (oflags != nullptr)
         {
-          *omask = sig_mask_;
+          *oflags = sig_mask_;
         }
 
       sig_mask_ |= mask;
@@ -610,16 +610,16 @@ namespace os
      * @warning Cannot be invoked from Interrupt Service Routines.
      */
     result_t
-    Thread::sig_clear (thread::sigset_t mask, thread::sigset_t* omask)
+    Thread::sig_clear (thread::sigset_t mask, thread::sigset_t* oflags)
     {
       os_assert_err(!scheduler::in_handler_mode (), EPERM);
       os_assert_err(mask != 0, EINVAL);
 
       Critical_section_irq cs; // ----- Critical section -----
 
-      if (omask != nullptr)
+      if (oflags != nullptr)
         {
-          *omask = sig_mask_;
+          *oflags = sig_mask_;
         }
 
       // Clear the selected bits; leave the rest untouched.
@@ -634,7 +634,7 @@ namespace os
      * Internal function used to test if the desired signal flags are raised.
      */
     result_t
-    Thread::_try_wait (thread::sigset_t mask, thread::sigset_t* omask)
+    Thread::_try_wait (thread::sigset_t mask, thread::sigset_t* oflags)
     {
       if (mask == 0)
         {
@@ -642,9 +642,9 @@ namespace os
           if (sig_mask_ != 0)
             {
               // Possibly return .
-              if (omask != nullptr)
+              if (oflags != nullptr)
                 {
-                  *omask = sig_mask_;
+                  *oflags = sig_mask_;
                 }
               // Since we returned them all, also clear them all.
               sig_mask_ = 0;
@@ -656,9 +656,9 @@ namespace os
           // Only if all desires signals are raised we're done.
           if ((sig_mask_ & mask) == mask)
             {
-              if (omask != nullptr)
+              if (oflags != nullptr)
                 {
-                  *omask = sig_mask_;
+                  *oflags = sig_mask_;
                 }
               // Clear desired signals.
               sig_mask_ &= ~mask;
@@ -684,7 +684,7 @@ namespace os
      * @warning Cannot be invoked from Interrupt Service Routines.
      */
     result_t
-    Thread::sig_wait (thread::sigset_t mask, thread::sigset_t* omask)
+    Thread::sig_wait (thread::sigset_t mask, thread::sigset_t* oflags)
     {
       os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
@@ -693,7 +693,7 @@ namespace os
             {
               Critical_section_irq cs; // ----- Critical section -----
 
-              if (_try_wait (mask, omask) == result::ok)
+              if (_try_wait (mask, oflags) == result::ok)
                 {
                   return result::ok;
                 }
@@ -720,13 +720,13 @@ namespace os
      * @warning Cannot be invoked from Interrupt Service Routines.
      */
     result_t
-    Thread::try_sig_wait (thread::sigset_t mask, thread::sigset_t* omask)
+    Thread::try_sig_wait (thread::sigset_t mask, thread::sigset_t* oflags)
     {
       os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       Critical_section_irq cs; // ----- Critical section -----
 
-      return _try_wait (mask, omask);
+      return _try_wait (mask, oflags);
     }
 
     /**
@@ -755,7 +755,7 @@ namespace os
      * @warning Cannot be invoked from Interrupt Service Routines.
      */
     result_t
-    Thread::timed_sig_wait (thread::sigset_t mask, thread::sigset_t* omask,
+    Thread::timed_sig_wait (thread::sigset_t mask, thread::sigset_t* oflags,
                             systicks_t ticks)
     {
       os_assert_err(!scheduler::in_handler_mode (), EPERM);
@@ -772,7 +772,7 @@ namespace os
             {
               Critical_section_irq cs; // ----- Critical section -----
 
-              if (_try_wait (mask, omask) == result::ok)
+              if (_try_wait (mask, oflags) == result::ok)
                 {
                   return result::ok;
                 }
