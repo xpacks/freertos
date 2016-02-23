@@ -40,7 +40,7 @@ namespace os
 
 #pragma GCC diagnostic push
 // TODO: remove it when fully implemented
-#pragma GCC diagnostic ignored "-Wunused-parameter"
+//#pragma GCC diagnostic ignored "-Wunused-parameter"
 
     namespace timer
     {
@@ -83,7 +83,7 @@ namespace os
 
       trace::printf ("%s() @%p \n", __func__, this);
 
-      // Start with 1 tick period and change it at start, when the
+      // Start with 1 tick period and change it at start(), when the
       // actual period is known.
       // Note: args are passed as ID, this requires a small patch in
       // timers.c to pass the pointer back.

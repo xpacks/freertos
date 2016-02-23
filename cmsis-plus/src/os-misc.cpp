@@ -36,83 +36,6 @@ namespace os
   {
     // ------------------------------------------------------------------------
 
-#pragma GCC diagnostic push
-// TODO: remove it when fully implemented
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
-    // ========================================================================
-#if 0
-    // ----- Signal flags -----
-
-    namespace flags
-    {
-      /**
-       * @details
-       *
-       * @note Can be invoked from Interrupt Service Routines.
-       */
-      result_t
-      set (Thread& thread, event_flags_t flags, event_flags_t* out_flags)
-      {
-        return result::ok;
-      }
-
-      /**
-       * @details
-       *
-       * @warning Cannot be invoked from Interrupt Service Routines.
-       */
-      result_t
-      clear (Thread& thread, event_flags_t flags, event_flags_t* out_flags)
-      {
-        os_assert_err(!scheduler::in_handler_mode (), EPERM);
-
-        return result::ok;
-      }
-
-      /**
-       * @details
-       *
-       * @warning Cannot be invoked from Interrupt Service Routines.
-       */
-      result_t
-      wait (event_flags_t flags, event_flags_t* out_flags)
-      {
-        os_assert_err(!scheduler::in_handler_mode (), EPERM);
-
-        return result::ok;
-      }
-
-      /**
-       * @details
-       *
-       * @note Can be invoked from Interrupt Service Routines.
-       */
-      result_t
-      try_wait (event_flags_t flags, event_flags_t* ret)
-      {
-        return result::ok;
-      }
-
-      /**
-       * @details
-       *
-       * @warning Cannot be invoked from Interrupt Service Routines.
-       */
-      result_t
-      timed_wait (event_flags_t flags, event_flags_t* out_flags,
-                  systicks_t ticks)
-      {
-        os_assert_err(!scheduler::in_handler_mode (), EPERM);
-
-        return result::ok;
-      }
-
-    } /* namespace flags */
-#endif
-
-    // ========================================================================
-
     Named_object::Named_object (const char* name) :
         name_ (name != nullptr ? name : "-")
     {
@@ -120,8 +43,6 @@ namespace os
     }
 
   // --------------------------------------------------------------------------
-
-#pragma GCC diagnostic pop
 
   } /* namespace rtos */
 } /* namespace os */

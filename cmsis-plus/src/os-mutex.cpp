@@ -38,7 +38,7 @@ namespace os
 
 #pragma GCC diagnostic push
 // TODO: remove it when fully implemented
-#pragma GCC diagnostic ignored "-Wunused-parameter"
+//#pragma GCC diagnostic ignored "-Wunused-parameter"
 
     namespace mutex
     {
