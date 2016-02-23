@@ -19,14 +19,17 @@
 /*
  * This file is part of the CMSIS++ proposal, intended as a CMSIS
  * replacement for C++ applications.
+ *
+ * It is included in `cmsis-plus/rtos/os.h` to customise
+ * it with port specific declarations.
  */
 
-#ifndef CMSIS_PLUS_RTOS_OS_IMPL_DECLS_H_
-#define CMSIS_PLUS_RTOS_OS_IMPL_DECLS_H_
+#ifndef CMSIS_PLUS_RTOS_PORT_OS_DECLS_H_
+#define CMSIS_PLUS_RTOS_PORT_OS_DECLS_H_
 
 // ----------------------------------------------------------------------------
 
-#include <cmsis-plus/rtos/os-config.h>
+#include <cmsis-plus/rtos/os-app-config.h>
 
 // ----------------------------------------------------------------------------
 
@@ -41,9 +44,15 @@ namespace os
   {
     class Thread;
 
-    namespace impl
+    namespace port
     {
       // ----------------------------------------------------------------------
+
+      namespace stack
+      {
+        // Align stack to 8 bytes.
+        using element_t = long long;
+      } /* namespace stack */
 
       // Simple list of threads.
       class Tasks_list
@@ -57,13 +66,18 @@ namespace os
         add (Thread* thread);
         void
         remove (Thread* thread);
+        void
+        remove (std::size_t pos);
 
         /**
          * @brief Get top priority task.
          * @return Pointer to task.
          */
         Thread*
-        top_task (void);
+        top_prio_task (void);
+
+        bool
+        empty(void);
 
         std::size_t
         length ();
@@ -79,7 +93,7 @@ namespace os
 
     // ----------------------------------------------------------------------
 
-    } /* namespace impl */
+    } /* namespace port */
   } /* namespace rtos */
 } /* namespace os */
 
@@ -89,19 +103,25 @@ namespace os
 {
   namespace rtos
   {
-    namespace impl
+    namespace port
     {
       // ----------------------------------------------------------------------
 
+      inline bool
+      Tasks_list::empty(void)
+      {
+        return (count_ == 0);
+      }
+
       inline std::size_t
-      Tasks_list::get_length ()
+      Tasks_list::length ()
       {
         return count_;
       }
 
     // ----------------------------------------------------------------------
 
-    } /* namespace impl */
+    } /* namespace port */
   } /* namespace rtos */
 } /* namespace os */
 
@@ -109,4 +129,4 @@ namespace os
 
 #endif /* __cplusplus */
 
-#endif /* CMSIS_PLUS_RTOS_OS_IMPL_DECLS_H_ */
+#endif /* CMSIS_PLUS_RTOS_PORT_OS_DECLS_H_ */
