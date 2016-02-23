@@ -414,7 +414,12 @@ Timer_t * const pxTimer = ( Timer_t * ) listGET_OWNER_OF_HEAD_ENTRY( pxCurrentTi
 	}
 
 	/* Call the timer callback. */
+#if defined(configUSE_CMSIS_PLUS)
+  // [ILG] use ID to store CMSIS args
+  pxTimer->pxCallbackFunction( ( TimerHandle_t ) pxTimer->pvTimerID );
+#else
 	pxTimer->pxCallbackFunction( ( TimerHandle_t ) pxTimer );
+#endif
 }
 /*-----------------------------------------------------------*/
 
