@@ -44,7 +44,7 @@ namespace os
 
     namespace timer
     {
-      const Attributes initializer
+      const Attributes once_initializer
         { nullptr };
     } /* namespace timer */
 
@@ -57,7 +57,7 @@ namespace os
      */
     Timer::Timer (timer::func_t function, timer::func_args_t args) :
         Timer
-          { timer::initializer, function, args }
+          { timer::once_initializer, function, args }
     {
       ;
     }
