@@ -243,8 +243,9 @@ namespace os
           }
       }
 
+#if 1
       Thread*
-      Tasks_list::top_prio_task (void)
+      Tasks_list::_top_prio_task (void)
       {
         Thread* thread = nullptr;
         thread::priority_t prio = thread::priority::none;
@@ -263,6 +264,23 @@ namespace os
         remove (pos);
 
         return thread;
+      }
+#endif
+
+      void
+      Tasks_list::wakeup_one ()
+      {
+        _top_prio_task ()->wakeup ();
+      }
+
+      void
+      Tasks_list::wakeup_all ()
+      {
+        for (std::size_t i = 0; i < sizeof(array_) / sizeof(array_[0]); ++i)
+          {
+            array_[i]->wakeup ();
+          }
+        count_ = 0;
       }
 
     } /* namespace port */

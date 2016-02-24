@@ -69,15 +69,23 @@ namespace os
         void
         remove (std::size_t pos);
 
+        void
+        wakeup_one ();
+
+        void
+        wakeup_all ();
+
+#if 1
         /**
          * @brief Get top priority task.
          * @return Pointer to task.
          */
         Thread*
-        top_prio_task (void);
+        _top_prio_task (void);
+#endif
 
         bool
-        empty(void);
+        empty (void);
 
         std::size_t
         length ();
@@ -108,7 +116,7 @@ namespace os
       // ----------------------------------------------------------------------
 
       inline bool
-      Tasks_list::empty(void)
+      Tasks_list::empty (void)
       {
         return (count_ == 0);
       }
