@@ -88,21 +88,6 @@ namespace os
         taskYIELD();
       }
 
-      /**
-       * @details
-       * Remove the current thread from the ready list and pass
-       * control to the next thread that is in \b READY state.
-       *
-       * @warning Cannot be invoked from Interrupt Service Routines.
-       */
-      void
-      suspend (void)
-      {
-        os_assert_throw(!scheduler::in_handler_mode (), EPERM);
-
-        this_thread::thread ().suspend ();
-      }
-
     } /* namespace this_thread */
 
     // ======================================================================
