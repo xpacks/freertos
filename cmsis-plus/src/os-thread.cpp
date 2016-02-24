@@ -529,9 +529,9 @@ namespace os
 
     /**
      * @details
-     * Set more signal bits in the thread current signal mask.
+     * Set more bits in the thread current signal flags mask.
      * Use OR at bit-mask level.
-     * Wake-up the thread to evaluate the signals.
+     * Wake-up the thread to evaluate the signal flagss.
      *
      * @note Can be invoked from Interrupt Service Routines.
      */
@@ -557,7 +557,7 @@ namespace os
     /**
      * @details
      * Select the requested bits from the thread current signal mask
-     * and return them. If requested, clear all the selected bits in the
+     * and return them. If requested, clear the selected bits in the
      * thread signal mask.
      *
      * If the mask is zero, return the full thread signal mask,
@@ -566,7 +566,7 @@ namespace os
      * @warning Cannot be invoked from Interrupt Service Routines.
      */
     thread::sigset_t
-    Thread::sig_get (thread::sigset_t mask, bool clear)
+    Thread::sig_get (thread::sigset_t mask, flags::mode_t mode)
     {
       os_assert_err(!scheduler::in_handler_mode (), sig::error);
 
@@ -579,7 +579,7 @@ namespace os
         }
 
       thread::sigset_t ret = sig_mask_ & mask;
-      if (clear)
+      if ((mode & flags::mode::clear) != 0)
         {
           // Clear the selected bits; leave the rest untouched.
           sig_mask_ &= ~mask;
@@ -619,9 +619,24 @@ namespace os
      * Internal function used to test if the desired signal flags are raised.
      */
     result_t
-    Thread::_try_wait (thread::sigset_t mask, thread::sigset_t* oflags)
+    Thread::_try_wait (thread::sigset_t mask, thread::sigset_t* oflags,
+                       flags::mode_t mode)
     {
-      if (mask == 0)
+      if ((mask != 0) && ((mode & flags::mode::all) != 0))
+        {
+          // Only if all desires signals are raised we're done.
+          if ((sig_mask_ & mask) == mask)
+            {
+              if (oflags != nullptr)
+                {
+                  *oflags = sig_mask_;
+                }
+              // Clear desired signals.
+              sig_mask_ &= ~mask;
+              return result::ok;
+            }
+        }
+      else if ((mask == 0) || ((mode & flags::mode::any) != 0))
         {
           // Any signal will do it.
           if (sig_mask_ != 0)
@@ -636,40 +651,34 @@ namespace os
               return result::ok;
             }
         }
-      else
-        {
-          // Only if all desires signals are raised we're done.
-          if ((sig_mask_ & mask) == mask)
-            {
-              if (oflags != nullptr)
-                {
-                  *oflags = sig_mask_;
-                }
-              // Clear desired signals.
-              sig_mask_ &= ~mask;
-              return result::ok;
-            }
-        }
 
       return EAGAIN;
     }
 
     /**
      * @details
-     * Suspend the execution of the thread until all
-     * specified signal flags are raised. If these signal flags are
-     * already raised, the function returns instantly.
+     * If the mode::all bit is set, the function expects
+     * all given flags to be raised; otherwise, if the mode::any
+     * bit is set, the function expects any single flag to be raised.
      *
-     * When the parameter mask is 0, the current RUNNING thread is suspended
-     * until any signal flag is raised. In this case, if any signals are
-     * already raised, the function returns instantly.
+     * If the expected signal flags are
+     * raised, the function returns instantly.
      *
-     * Signal flags that are returned are automatically cleared.
+     * Otherwise suspend the execution of the current thread until all/any
+     * specified signal flags are raised.
+     *
+     * When the parameter mask is 0, the thread is suspended
+     * until any signal flag is raised. In this case, if any signal flags
+     * are already raised, the function returns instantly.
+     *
+     * If the mode::clear bit is set, the signal flags that are
+     * returned are automatically cleared.
      *
      * @warning Cannot be invoked from Interrupt Service Routines.
      */
     result_t
-    Thread::sig_wait (thread::sigset_t mask, thread::sigset_t* oflags)
+    Thread::sig_wait (thread::sigset_t mask, thread::sigset_t* oflags,
+                      flags::mode_t mode)
     {
       os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
@@ -678,7 +687,7 @@ namespace os
             {
               Critical_section_irq cs; // ----- Critical section -----
 
-              if (_try_wait (mask, oflags) == result::ok)
+              if (_try_wait (mask, oflags, mode) == result::ok)
                 {
                   return result::ok;
                 }
@@ -696,33 +705,41 @@ namespace os
 
     /**
      * @details
-     * If all given signal flags are raised, the function
-     * returns success and clears the given signal flags.
+     * If the mode::all bit is set, the function expects
+     * all given flags to be raised; otherwise, if the mode::any
+     * bit is set, the function expects any single flag to be raised.
      *
-     * When the parameter mask is 0, if any signal flag is
-     * raised, the function returns success and clears all flags.
+     * The function does not blocks, if the expected signal flags are
+     * not raised, but returns EGAIN.
      *
      * @warning Cannot be invoked from Interrupt Service Routines.
      */
     result_t
-    Thread::try_sig_wait (thread::sigset_t mask, thread::sigset_t* oflags)
+    Thread::try_sig_wait (thread::sigset_t mask, thread::sigset_t* oflags,
+                          flags::mode_t mode)
     {
       os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
       Critical_section_irq cs; // ----- Critical section -----
 
-      return _try_wait (mask, oflags);
+      return _try_wait (mask, oflags, mode);
     }
 
     /**
      * @details
-     * Suspend the execution of the thread until all
-     * specified signal flags are raised. When these signal flags are
-     * already raised, the function returns instantly.
+     * If the mode::all bit is set, the function expects
+     * all given flags to be raised; otherwise, if the mode::any
+     * bit is set, the function expects any single flag to be raised.
+     *
+     * If the expected signal flags are
+     * raised, the function returns instantly.
+     *
+     * Otherwise suspend the execution of the thread until all/any
+     * specified signal flags are raised.
      *
      * When the parameter mask is 0, the thread is suspended
-     * until any signal flag is raised. In this case, if any signals are
-     * already raised, the function returns instantly.
+     * until any event flag is raised. In this case, if any signal flags
+     * are already raised, the function returns instantly.
      *
      * The wait shall be terminated when the specified timeout
      * expires.
@@ -733,15 +750,16 @@ namespace os
      * clock on which it is based (the SysTick clock for CMSIS).
      *
      * Under no circumstance shall the operation fail with a timeout
-     * if the signal flags are already raised
+     * if the signal flags are already raised.
      *
-     * Signal flags that are returned are automatically cleared.
+     * If the mode::clear bit is set, the signal flags that are
+     * returned are automatically cleared.
      *
      * @warning Cannot be invoked from Interrupt Service Routines.
      */
     result_t
     Thread::timed_sig_wait (thread::sigset_t mask, thread::sigset_t* oflags,
-                            systicks_t ticks)
+                            flags::mode_t mode, systicks_t ticks)
     {
       os_assert_err(!scheduler::in_handler_mode (), EPERM);
 
@@ -757,7 +775,7 @@ namespace os
             {
               Critical_section_irq cs; // ----- Critical section -----
 
-              if (_try_wait (mask, oflags) == result::ok)
+              if (_try_wait (mask, oflags, mode) == result::ok)
                 {
                   return result::ok;
                 }
