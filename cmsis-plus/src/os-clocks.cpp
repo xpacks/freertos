@@ -48,7 +48,7 @@ os_systick_handler (void)
   using namespace os::rtos;
 
   // Prevent scheduler actions before starting it.
-  if (scheduler::is_started ())
+  if (scheduler::started ())
     {
       os_impl_systick_handler ();
     }
@@ -72,7 +72,7 @@ os_rtc_handler (void)
   using namespace os::rtos;
 
   // Prevent scheduler actions before starting it.
-  if (scheduler::is_started ())
+  if (scheduler::started ())
     {
       os_impl_rtc_handler ();
     }
