@@ -56,12 +56,14 @@ namespace os
       namespace scheduler
       {
         inline result_t
+        __attribute__((always_inline))
         initialize (void)
         {
           return result::ok;
         }
 
         inline bool
+        __attribute__((always_inline))
         in_handler_mode (void)
         {
           // In Handler mode, IPSR holds the exception number.
@@ -70,6 +72,7 @@ namespace os
         }
 
         inline result_t
+        __attribute__((always_inline))
         start (void)
         {
           vTaskStartScheduler ();
@@ -77,12 +80,14 @@ namespace os
         }
 
         inline void
+        __attribute__((always_inline))
         lock (void)
         {
           vTaskSuspendAll ();
         }
 
         inline void
+        __attribute__((always_inline))
         unlock (rtos::scheduler::status_t status __attribute__((unused)))
         {
           xTaskResumeAll ();
@@ -94,6 +99,7 @@ namespace os
       {
         // Enter an IRQ critical section
         inline rtos::critical::status_t
+        __attribute__((always_inline))
         enter (void)
         {
 #if 0
@@ -109,6 +115,7 @@ namespace os
 
         // Exit an IRQ critical section
         inline rtos::critical::status_t
+        __attribute__((always_inline))
         exit (rtos::critical::status_t status __attribute__((unused)))
         {
 #if 0
@@ -127,6 +134,7 @@ namespace os
       public:
 
         inline static result_t
+        __attribute__((always_inline))
         sleep_for (duration_t ticks)
         {
           vTaskDelay (ticks);
@@ -141,6 +149,7 @@ namespace os
       namespace this_thread
       {
         inline rtos::Thread&
+        __attribute__((always_inline))
         thread (void)
         {
           TaskHandle_t th = xTaskGetCurrentTaskHandle ();
@@ -152,13 +161,13 @@ namespace os
         }
 
         inline void
+        __attribute__((always_inline))
         yield (void)
         {
           taskYIELD();
         }
 
       } /* namespace this_thread */
-
 
       inline unsigned portBASE_TYPE
       makeFreeRtosPriority (thread::priority_t priority)
@@ -188,6 +197,7 @@ namespace os
       public:
 
         inline static void
+        __attribute__((always_inline))
         create (rtos::Thread* obj)
         {
           uint16_t stack_size_words = (uint16_t) (obj->stack_size_bytes_
@@ -224,24 +234,28 @@ namespace os
         }
 
         inline static void
+        __attribute__((always_inline))
         destroy (rtos::Thread* obj)
         {
           vEventGroupDelete (obj->port_.event_flags);
         }
 
         inline static void
+        __attribute__((always_inline))
         suspend (rtos::Thread* obj)
         {
           vTaskSuspend (obj->port_.handle);
         }
 
         inline static void
+        __attribute__((always_inline))
         wakeup (rtos::Thread* obj)
         {
           vTaskResume (obj->port_.handle);
         }
 
         inline static thread::priority_t
+        __attribute__((always_inline))
         sched_prio (rtos::Thread* obj)
         {
           UBaseType_t p = uxTaskPriorityGet (obj->port_.handle);
@@ -252,6 +266,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         sched_prio (rtos::Thread* obj, thread::priority_t prio)
         {
           obj->prio_ = prio;
@@ -262,6 +277,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         join (rtos::Thread* obj)
         {
           for (;;)
@@ -278,12 +294,14 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         detach (rtos::Thread* obj __attribute__((unused)))
         {
           return result::ok;
         }
 
         inline static void
+        __attribute__((always_inline))
         exit (rtos::Thread* obj)
         {
           xEventGroupSetBits (obj->port_.event_flags, 1);
@@ -305,6 +323,7 @@ namespace os
       public:
 
         inline static void
+        __attribute__((always_inline))
         create (rtos::Timer* obj, timer::func_t function,
                 timer::func_args_t args)
         {
@@ -321,6 +340,7 @@ namespace os
         }
 
         inline static void
+        __attribute__((always_inline))
         destroy (rtos::Timer* obj)
         {
           BaseType_t ret = xTimerDelete(obj->port_.handle, portMAX_DELAY);
@@ -329,6 +349,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         start (rtos::Timer* obj, systicks_t ticks)
         {
           if (xTimerIsTimerActive (obj->port_.handle) != pdFALSE)
@@ -356,6 +377,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         stop (rtos::Timer* obj)
         {
           if (xTimerIsTimerActive (obj->port_.handle) != pdFALSE)
@@ -384,6 +406,7 @@ namespace os
       public:
 
         inline static void
+        __attribute__((always_inline))
         create (rtos::Mutex* obj)
         {
           if (obj->type_ == mutex::type::recursive)
@@ -397,12 +420,14 @@ namespace os
         }
 
         inline static void
+        __attribute__((always_inline))
         destroy (rtos::Mutex* obj)
         {
           vSemaphoreDelete(obj->port_.handle);
         }
 
         inline static result_t
+        __attribute__((always_inline))
         lock (rtos::Mutex* obj)
         {
           BaseType_t res;
@@ -424,6 +449,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         try_lock (rtos::Mutex* obj)
         {
           BaseType_t res;
@@ -445,6 +471,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         timed_lock (rtos::Mutex* obj, systicks_t ticks)
         {
           BaseType_t res;
@@ -466,6 +493,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         unlock (rtos::Mutex* obj)
         {
           BaseType_t res;
@@ -487,12 +515,14 @@ namespace os
         }
 
         inline static thread::priority_t
+        __attribute__((always_inline))
         prio_ceiling (const rtos::Mutex* obj)
         {
           return obj->prio_ceiling_;
         }
 
         inline static result_t
+        __attribute__((always_inline))
         prio_ceiling (rtos::Mutex* obj, thread::priority_t prio_ceiling,
                       thread::priority_t* old_prio_ceiling)
         {
@@ -526,10 +556,10 @@ namespace os
 #if defined(OS_INCLUDE_PORT_RTOS_CONDITION_VARIABLE)
 
       class Condition_variable
-      {
-      public:
+        {
+        public:
 
-      };
+        };
 
 #endif /* OS_INCLUDE_PORT_RTOS_CONDITION_VARIABLE */
 
@@ -542,6 +572,7 @@ namespace os
       public:
 
         inline static void
+        __attribute__((always_inline))
         create (rtos::Semaphore* obj)
         {
           obj->port_.handle = xSemaphoreCreateCounting(obj->max_count_,
@@ -549,12 +580,14 @@ namespace os
         }
 
         inline static void
+        __attribute__((always_inline))
         destroy (rtos::Semaphore* obj)
         {
           vSemaphoreDelete(obj->port_.handle);
         }
 
         inline static result_t
+        __attribute__((always_inline))
         post (rtos::Semaphore* obj)
         {
           portBASE_TYPE thread_woken = pdFALSE;
@@ -581,6 +614,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         wait (rtos::Semaphore* obj)
         {
           if (xSemaphoreTake (obj->port_.handle, portMAX_DELAY) != pdTRUE)
@@ -593,6 +627,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         try_wait (rtos::Semaphore* obj)
         {
           portBASE_TYPE thread_woken = pdFALSE;
@@ -616,6 +651,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         timed_wait (rtos::Semaphore* obj, systicks_t ticks)
         {
           if (xSemaphoreTake(obj->port_.handle,
@@ -629,6 +665,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         reset (rtos::Semaphore* obj)
         {
           if (obj->count_ < 0)
@@ -653,10 +690,10 @@ namespace os
 #if defined(OS_INCLUDE_PORT_RTOS_MEMORY_POOL)
 
       class Memory_pool
-      {
-      public:
+        {
+        public:
 
-      };
+        };
 
 #endif /* OS_INCLUDE_PORT_RTOS_MEMORY_POOL */
 
@@ -669,18 +706,21 @@ namespace os
       public:
 
         inline static void
+        __attribute__((always_inline))
         create (rtos::Message_queue* obj)
         {
           obj->port_.handle = xQueueCreate(obj->msgs_, obj->queue_size_bytes_);
         }
 
         inline static void
+        __attribute__((always_inline))
         destroy (rtos::Message_queue* obj)
         {
           vQueueDelete (obj->port_.handle);
         }
 
         inline static result_t
+        __attribute__((always_inline))
         send (rtos::Message_queue* obj, const char* msg,
               std::size_t nbytes __attribute__((unused)),
               mqueue::priority_t mprio __attribute__((unused)))
@@ -698,6 +738,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         try_send (rtos::Message_queue* obj, const char* msg,
                   std::size_t nbytes __attribute__((unused)),
                   mqueue::priority_t mprio __attribute__((unused)))
@@ -726,6 +767,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         timed_send (rtos::Message_queue* obj, const char* msg,
                     std::size_t nbytes __attribute__((unused)),
                     mqueue::priority_t mprio __attribute__((unused)),
@@ -744,6 +786,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         receive (rtos::Message_queue* obj, char* msg,
                  std::size_t nbytes __attribute__((unused)),
                  mqueue::priority_t* mprio __attribute__((unused)))
@@ -759,6 +802,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         try_receive (rtos::Message_queue* obj, char* msg,
                      std::size_t nbytes __attribute__((unused)),
                      mqueue::priority_t* mprio __attribute__((unused)))
@@ -788,6 +832,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         timed_receive (rtos::Message_queue* obj, char* msg,
                        std::size_t nbytes __attribute__((unused)),
                        mqueue::priority_t* mprio __attribute__((unused)),
@@ -804,6 +849,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         reset (rtos::Message_queue* obj)
         {
           xQueueReset(obj->port_.handle);
@@ -824,18 +870,21 @@ namespace os
       public:
 
         inline static void
+        __attribute__((always_inline))
         create (rtos::Event_flags* obj)
         {
           obj->port_.handle = xEventGroupCreate ();
         }
 
         inline static void
+        __attribute__((always_inline))
         destroy (rtos::Event_flags* obj)
         {
           vEventGroupDelete (obj->port_.handle);
         }
 
         inline static result_t
+        __attribute__((always_inline))
         wait (rtos::Event_flags* obj, flags::mask_t mask, flags::mask_t* oflags,
               flags::mode_t mode)
         {
@@ -863,6 +912,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         try_wait (rtos::Event_flags* obj, flags::mask_t mask,
                   flags::mask_t* oflags, flags::mode_t mode)
         {
@@ -910,6 +960,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         timed_wait (rtos::Event_flags* obj, flags::mask_t mask,
                     flags::mask_t* oflags, flags::mode_t mode, systicks_t ticks)
         {
@@ -937,6 +988,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         raise (rtos::Event_flags* obj, flags::mask_t mask,
                flags::mask_t* oflags)
         {
@@ -968,6 +1020,7 @@ namespace os
         }
 
         inline static result_t
+        __attribute__((always_inline))
         clear (rtos::Event_flags* obj, flags::mask_t mask,
                flags::mask_t* oflags)
         {
@@ -991,6 +1044,7 @@ namespace os
         }
 
         inline static flags::mask_t
+        __attribute__((always_inline))
         get (rtos::Event_flags* obj, flags::mask_t mask, flags::mode_t mode)
         {
           EventBits_t bits;
@@ -1031,10 +1085,11 @@ namespace os
         }
 
         inline static bool
+        __attribute__((always_inline))
         waiting (rtos::Event_flags* obj)
         {
           // This is a custom call added to FreeRTOS.
-          return xEventFlagsWaiting(obj->port_.handle);
+          return xEventFlagsWaiting (obj->port_.handle);
         }
       };
 

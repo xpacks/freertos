@@ -21,9 +21,7 @@
 
 #include <stdio.h>
 #include <cstdlib>
-
-#include "FreeRTOS.h"
-#include "task.h"
+#include <cassert>
 
 using namespace os;
 using namespace os::rtos;
@@ -43,7 +41,7 @@ task (void* args __attribute__((unused)))
       Thread& t = this_thread::thread ();
       trace::printf ("%s %d\n", t.name (), count);
 
-      Systick_clock::sleep_for (configTICK_RATE_HZ);
+      Systick_clock::sleep_for (Systick_clock::frequency_hz);
     }
   return nullptr;
 }

@@ -38,9 +38,10 @@
 
 // Special applications may require to add some custom
 // storage in the thread control block.
+#define OS_INCLUDE_RTOS_CUSTOM_THREAD_USER_STORAGE          (1)
 typedef struct os_thread_user_storage_s
 {
-  ;
+  int   dummy;
 } os_thread_user_storage_t;
 
 // ----------------------------------------------------------------------------

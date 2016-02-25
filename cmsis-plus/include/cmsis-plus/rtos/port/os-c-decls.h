@@ -32,8 +32,6 @@
 #ifndef CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_
 #define CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_
 
-#include <cmsis-plus/rtos/port/os-c-decls.h>
-
 #if defined(OS_INCLUDE_PORT_RTOS_THREAD)
 
 typedef struct os_thread_port_data_s
