@@ -30,6 +30,7 @@
 // ----------------------------------------------------------------------------
 
 #include <cmsis-plus/rtos/os-app-config.h>
+#include <cmsis-plus/rtos/port/os-c-decls.h>
 
 // ----------------------------------------------------------------------------
 
@@ -46,6 +47,15 @@ namespace os
 
     namespace port
     {
+      class Thread;
+      class Timer;
+      class Mutex;
+      class Condition_variable;
+      class Semaphore;
+      class Memory_pool;
+      class Message_queue;
+      class Event_flags;
+
       // ----------------------------------------------------------------------
 
       namespace stack
@@ -63,9 +73,9 @@ namespace os
         ~Tasks_list ();
 #if 1
         void
-        add (Thread* thread);
+        add (rtos::Thread* thread);
         void
-        remove (Thread* thread);
+        remove (rtos::Thread* thread);
         void
         remove (std::size_t pos);
 
@@ -80,7 +90,7 @@ namespace os
          * @brief Get top priority task.
          * @return Pointer to task.
          */
-        Thread*
+        rtos::Thread*
         _top_prio_task (void);
 #endif
 
@@ -95,7 +105,7 @@ namespace os
 #endif
       protected:
 
-        Thread* array_[OS_INTEGER_MAX_NUMBER_OF_THREADS];
+        rtos::Thread* array_[OS_INTEGER_MAX_NUMBER_OF_THREADS];
         std::size_t count_;
       };
 

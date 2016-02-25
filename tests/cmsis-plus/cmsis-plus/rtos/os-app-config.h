@@ -24,17 +24,17 @@
 #ifndef CMSIS_PLUS_RTOS_OS_APP_CONFIG_H_
 #define CMSIS_PLUS_RTOS_OS_APP_CONFIG_H_
 
-#define OS_INTEGER_SYSTICK_FREQUENCY_HZ (1000)
+#define OS_INTEGER_SYSTICK_FREQUENCY_HZ                     (1000)
 
-#define OS_INTEGER_MAX_NUMBER_OF_THREADS (10)
+#define OS_INTEGER_MAX_NUMBER_OF_THREADS                    (10)
 
 
 // With 4 bits NVIC, there are 16 levels, 0 = highest, 15 = lowest
 
 // Disable all interrupts from 15 to 4, keep 3-2-1 enabled
-#define OS_INTEGER_CRITICAL_SECTION_INTERRUPT_PRIORITY (4)
+#define OS_INTEGER_CRITICAL_SECTION_INTERRUPT_PRIORITY      (4)
 
-// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 // Special applications may require to add some custom
 // storage in the thread control block.
@@ -42,5 +42,20 @@ typedef struct os_thread_user_storage_s
 {
   ;
 } os_thread_user_storage_t;
+
+// ----------------------------------------------------------------------------
+
+// Request the inclusion of custom implementations.
+#define OS_INCLUDE_PORT_RTOS_SYSTICK_CLOCK_SLEEP_FOR        (1)
+#define OS_INCLUDE_PORT_RTOS_THREAD                         (1)
+#define OS_INCLUDE_PORT_RTOS_TIMER                          (1)
+#define OS_INCLUDE_PORT_RTOS_MUTEX                          (1)
+// #define OS_INCLUDE_PORT_RTOS_CONDITION_VARIABLE             (1)
+#define OS_INCLUDE_PORT_RTOS_SEMAPHORE                      (1)
+// #define OS_INCLUDE_PORT_RTOS_MEMORY_POOL                    (1)
+#define OS_INCLUDE_PORT_RTOS_MESSAGE_QUEUE                  (1)
+#define OS_INCLUDE_PORT_RTOS_EVENT_FLAGS                    (1)
+
+// ----------------------------------------------------------------------------
 
 #endif /* CMSIS_PLUS_RTOS_OS_APP_CONFIG_H_ */

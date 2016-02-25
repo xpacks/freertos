@@ -23,10 +23,88 @@
  *
  * It is included in `cmsis-plus/rtos/os-c-decls.h` to customise
  * it with port specific declarations.
+ *
+ * These structures (which basically contain handlers)
+ * are conditionally included in the system objects
+ * when they are implemented using the port native objects.
  */
 
 #ifndef CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_
 #define CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_
 
+#include <cmsis-plus/rtos/port/os-c-decls.h>
+
+#if defined(OS_INCLUDE_PORT_RTOS_THREAD)
+
+typedef struct os_thread_port_data_s
+  {
+    void* handle;
+    void* event_flags;
+  }os_thread_port_data_t;
+
+#endif /* OS_INCLUDE_PORT_RTOS_THREAD */
+
+#if defined(OS_INCLUDE_PORT_RTOS_TIMER)
+
+typedef struct os_timer_port_data_s
+  {
+    void* handle;
+  }os_timer_port_data_t;
+
+#endif /* OS_INCLUDE_PORT_RTOS_TIMER */
+
+#if defined(OS_INCLUDE_PORT_RTOS_MUTEX)
+
+typedef struct os_mutex_port_data_s
+  {
+    void* handle;
+  }os_mutex_port_data_t;
+
+#endif /* OS_INCLUDE_PORT_RTOS_MUTEX */
+
+#if defined(OS_INCLUDE_PORT_RTOS_CONDITION_VARIABLE)
+
+typedef struct os_condvar_port_data_s
+  {
+    void* handle;
+  }os_condvar_port_data_t;
+
+#endif /* OS_INCLUDE_PORT_RTOS_CONDITION_VARIABLE */
+
+#if defined(OS_INCLUDE_PORT_RTOS_SEMAPHORE)
+
+typedef struct os_semaphore_port_data_s
+  {
+    void* handle;
+  }os_semaphore_port_data_t;
+
+#endif
+
+#if defined(OS_INCLUDE_PORT_RTOS_MEMORY_POOL)
+
+typedef struct os_mempool_port_data_s
+  {
+    void* handle;
+  }os_mempool_port_data_t;
+
+#endif /* OS_INCLUDE_PORT_RTOS_MEMORY_POOL */
+
+#if defined(OS_INCLUDE_PORT_RTOS_MESSAGE_QUEUE)
+
+typedef struct os_mqueue_port_data_s
+  {
+    void* handle;
+  }os_mqueue_port_data_t;
+
+#endif /* OS_INCLUDE_PORT_RTOS_MESSAGE_QUEUE */
+
+#if defined(OS_INCLUDE_PORT_RTOS_EVENT_FLAGS)
+
+typedef struct os_evflags_port_data_s
+  {
+    void* handle;
+  }os_evflags_port_data_t;
+
+#endif /* OS_INCLUDE_PORT_RTOS_EVENT_FLAGS */
 
 #endif /* CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_ */
