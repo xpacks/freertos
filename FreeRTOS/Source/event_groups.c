@@ -681,3 +681,18 @@ BaseType_t xWaitConditionMet = pdFALSE;
 
 #endif
 
+	// [ILG]
+	BaseType_t xEventFlagsWaiting(void* xEventGroup)
+	{
+	  EventGroup_t *pxEventBits = ( EventGroup_t * ) xEventGroup;
+	  const List_t *pxTasksWaitingForBits = &( pxEventBits->xTasksWaitingForBits );
+
+	  if (listCURRENT_LIST_LENGTH( pxTasksWaitingForBits ) > ( UBaseType_t ) 0)
+	  {
+	      return pdTRUE;
+	  }
+	  else
+	  {
+	      return pdFALSE;
+	  }
+	}

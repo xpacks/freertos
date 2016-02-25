@@ -721,6 +721,9 @@ void vEventGroupClearBitsCallback( void *pvEventGroup, const uint32_t ulBitsToCl
 	UBaseType_t uxEventGroupGetNumber( void* xEventGroup ) PRIVILEGED_FUNCTION;
 #endif
 
+// [ILG]
+BaseType_t xEventFlagsWaiting(void* xEventGroup);
+
 #ifdef __cplusplus
 }
 #endif
