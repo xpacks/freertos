@@ -369,7 +369,7 @@ namespace os
             }
           else
             {
-              if (xTimerChangePeriod(obj->port_.handle, ticks, 0) != pdPASS)
+              if (xTimerChangePeriod(obj->port_.handle, ticks, 10) == pdFAIL)
                 {
                   return ENOTRECOVERABLE;
                 }
@@ -388,7 +388,7 @@ namespace os
         __attribute__((always_inline))
         stop (rtos::Timer* obj)
         {
-          if (xTimerIsTimerActive (obj->port_.handle) != pdFALSE)
+          if (xTimerIsTimerActive (obj->port_.handle) == pdFALSE)
             {
               return EAGAIN;
             }
