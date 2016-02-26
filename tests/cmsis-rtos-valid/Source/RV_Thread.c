@@ -645,6 +645,7 @@ void TC_ThreadYield (void) {
 */
 void TC_ThreadParam (void) {
   /* - Test invalid thread definition on osThreadCreate */
+
   ASSERT_TRUE (osThreadCreate (NULL, NULL) == NULL);
   
   /* - Test invalid thread id on osThreadTerminate */
@@ -674,36 +675,54 @@ void TC_ThreadInterrupts (void) {
 
     NVIC_EnableIRQ((IRQn_Type)0);
 
+    // [ILG]
+    ThId_Isr = (osThreadId)(0-1);
+
     ISR_ExNum = 0; /* Test: osThreadCreate */
     NVIC_SetPendingIRQ((IRQn_Type)0);
     // [ILG]
     osDelay(2);
     ASSERT_TRUE (ThId_Isr == NULL);
     
+    // [ILG]
+    ThId_Isr = (osThreadId)(0-1);
+
     ISR_ExNum = 1; /* Test: osThreadGetId */
     NVIC_SetPendingIRQ((IRQn_Type)0);
     // [ILG]
     osDelay(2);
     ASSERT_TRUE (ThId_Isr == NULL);
 
+    // [ILG]
+    ThPr_Isr = osPriorityNormal;
+
     ISR_ExNum = 2; /* Test: osThreadGetPriority */
     NVIC_SetPendingIRQ((IRQn_Type)0);
     // [ILG]
     osDelay(2);
     ASSERT_TRUE (ThPr_Isr == osPriorityError);
-    
+
+    // [ILG]
+    ThSt_Isr = osOK;
+
     ISR_ExNum = 3; /* Test: osThreadSetPriority */
     NVIC_SetPendingIRQ((IRQn_Type)0);
     // [ILG]
     osDelay(2);
     ASSERT_TRUE (ThSt_Isr == osErrorISR);
-    
+
+    // [ILG]
+    ThSt_Isr = osOK;
+
     ISR_ExNum = 4; /* Test: osThreadTerminate */
     NVIC_SetPendingIRQ((IRQn_Type)0);
     // [ILG]
     osDelay(2);
     ASSERT_TRUE (ThSt_Isr == osErrorISR);
-    
+
+    // [ILG]
+    ThSt_Isr = osOK;
+
     ISR_ExNum = 5; /* Test: osThreadYield */
     NVIC_SetPendingIRQ((IRQn_Type)0);
     // [ILG]
