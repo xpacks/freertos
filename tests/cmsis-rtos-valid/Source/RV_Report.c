@@ -39,7 +39,9 @@ uint32_t    current_result;       /* Current test case result                 */
 #define TAS (&test_report.assertions)         /* Total assertions             */
 #define CAS (&current_assertions)             /* Current assertions           */
 
-#define PRINT(x) MsgPrint x
+// [ILG]
+//#define PRINT(x) MsgPrint x
+#define PRINT(x) trace_printf x
 #define FLUSH()  MsgFlush()
 
 static uint8_t Passed[] = "PASSED";
