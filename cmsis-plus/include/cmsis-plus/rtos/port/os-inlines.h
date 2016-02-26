@@ -138,7 +138,7 @@ namespace os
         sleep_for (duration_t ticks)
         {
           vTaskDelay (ticks);
-          return result::ok;
+          return ETIMEDOUT;
         }
       };
 
@@ -238,6 +238,14 @@ namespace os
         destroy (rtos::Thread* obj)
         {
           vEventGroupDelete (obj->port_.event_flags);
+        }
+
+        inline static result_t
+        __attribute__((always_inline))
+        kill (rtos::Thread* obj)
+        {
+          vTaskSuspend (obj->port_.handle);
+          return result::ok;
         }
 
         inline static void
