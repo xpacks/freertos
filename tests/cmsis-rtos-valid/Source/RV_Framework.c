@@ -23,9 +23,9 @@
 Debug session dead end - debug script should close session here.
 */
 void closeDebug(void) {
-  __nop();
-  __nop();
-  __nop();
+  __NOP();
+  __NOP();
+  __NOP();
   // Test completed
 }
 
