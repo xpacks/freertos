@@ -10,6 +10,9 @@
 #include "cmsis_device.h"
 #include <cmsis-plus/diag/trace.h>
 
+// [ILG]
+// #define PARAM_CHECKING (1)
+
 //-------- <<< Use Configuration Wizard in Context Menu >>> --------------------
 
 // <h> Common Test Settings
