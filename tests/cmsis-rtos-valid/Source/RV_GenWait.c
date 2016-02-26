@@ -13,7 +13,8 @@
  *      Test implementation
  *----------------------------------------------------------------------------*/
 osStatus Stat_Isr;
-
+// [ILG]
+osEvent Event_Isr;
 
 /*-----------------------------------------------------------------------------
  *      Default IRQ Handler
@@ -22,8 +23,13 @@ void GenWait_IRQHandler (void) {
   
   switch (ISR_ExNum) {
     case 0: Stat_Isr = osDelay (10); break;
-   #if (osFeatureWait)
-    case 1: Stat_Isr = osWait  (10); break;
+   // [ILG]
+   #if (osFeature_Wait)
+   // #if (osFeatureWait)
+
+    // [ILG]
+    case 1: Event_Isr = osWait  (10); break;
+    // case 1: Stat_Isr = osWait  (10); break;
    #endif
   }
 }
@@ -53,8 +59,12 @@ test cases check the functions osDelay and osWait and call the generic wait func
 */
 void TC_GenWaitBasic (void) {
   ASSERT_TRUE (osDelay (10) == osEventTimeout);
- #if (osFeatureWait)
-  ASSERT_TRUE (osWait  (10) == osEventTimeout);
+  // [ILG]
+ #if (osFeature_Wait)
+ // #if (osFeatureWait)
+  // [ILG]
+  ASSERT_TRUE (osWait  (10).status == osEventTimeout);
+  // ASSERT_TRUE (osWait  (10) == osEventTimeout);
  #endif
 }
 
@@ -72,11 +82,19 @@ void TC_GenWaitInterrupts (void) {
   
   ISR_ExNum = 0; /* Test: osDelay */
   NVIC_SetPendingIRQ((IRQn_Type)0);
+  // [ILG]
+  osDelay(2);
   ASSERT_TRUE (Stat_Isr == osErrorISR);
 
- #if (osFeatureWait)
+  // [ILG]
+ #if (osFeature_Wait)
+ // #if (osFeatureWait)
   ISR_ExNum = 1; /* Test: osWait */
-  IRQ_SetPend (0);
+  // [ILG]
+  NVIC_SetPendingIRQ((IRQn_Type)0);
+  // IRQ_SetPend (0);
+  // [ILG]
+  osDelay(2);
   ASSERT_TRUE (Stat_Isr == osErrorISR);
  #endif
   
