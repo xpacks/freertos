@@ -119,19 +119,26 @@ void TC_TimerOneShot (void) {
     ASSERT_TRUE (osTimerStart (id, 10) == osOK);
     
     /* Wait for timer interval */
-    for (i = 1000000; i; i--) {
+    // [ILG]
+    for (i = 20; i; i--) {
+    // for (i = 1000000; i; i--) {
       if (Tim_Var_Os > 0) {
         break;
       }
+      // [ILG]
+      osDelay(1);
     }
     ASSERT_TRUE (i != 0);
     ASSERT_TRUE (Tim_Var_Os > 0);
     
     /* Wait another interval */
-    for (i = 1000000; i; i--) {
+    for (i = 20; i; i--) {
+    // for (i = 1000000; i; i--) {
       if (Tim_Var_Os > 1) {
         break;
       }
+      // [ILG]
+      osDelay(1);
     }
     ASSERT_TRUE (i == 0);
     ASSERT_TRUE (Tim_Var_Os == 1);
@@ -234,24 +241,49 @@ void TC_TimerInterrupts (void) {
   if (TimId_Running != NULL) {
     NVIC_EnableIRQ((IRQn_Type)0);
     
+    // [ILG]
+    TimId_Isr = (osTimerId)(0-1);
+
     ISR_ExNum = 0; /* Test: osTimerCreate (One Shoot) */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+    // [ILG]
+    osDelay(2);
     ASSERT_TRUE (TimId_Isr == NULL);
- 
+
+    // [ILG]
+    TimId_Isr = (osTimerId)(0-1);
+
     ISR_ExNum = 1; /* Test: osTimerCreate (Periodic) */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+    // [ILG]
+    osDelay(2);
     ASSERT_TRUE (TimId_Isr == NULL);
-    
+
+    // [ILG]
+    TimSt_Isr = osOK;
+
     ISR_ExNum = 2; /* Test: osTimerStart */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+    // [ILG]
+    osDelay(2);
     ASSERT_TRUE (TimSt_Isr == osErrorISR);
+
+    // [ILG]
+    TimSt_Isr = osOK;
 
     ISR_ExNum = 3; /* Test: osTimerStop */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+    // [ILG]
+    osDelay(2);
     ASSERT_TRUE (TimSt_Isr == osErrorISR);
-    
+
+    // [ILG]
+    TimSt_Isr = osOK;
+
     ISR_ExNum = 4; /* Test: osTimerDelete */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+    // [ILG]
+    osDelay(2);
     ASSERT_TRUE (TimSt_Isr == osErrorISR);
     
     NVIC_DisableIRQ((IRQn_Type)0);
