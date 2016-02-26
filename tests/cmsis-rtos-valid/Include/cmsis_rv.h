@@ -8,6 +8,7 @@
 #define __CMSIS_RV_H
 
 #include <stdint.h>
+#include "cmsis_device.h"
 
 /* Expansion macro used to create CMSIS Driver references */
 #define EXPAND_SYMBOL(name, port) name##port
