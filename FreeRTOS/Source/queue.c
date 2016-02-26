@@ -815,7 +815,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 		}
 	}
 	// [ILG]
-  return pdPASS;
+  return pdFAIL;
 }
 /*-----------------------------------------------------------*/
 
@@ -1559,7 +1559,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 		}
 	}
 	// [ILG]
-  return pdPASS;
+  return pdFAIL;
 }
 /*-----------------------------------------------------------*/
 
