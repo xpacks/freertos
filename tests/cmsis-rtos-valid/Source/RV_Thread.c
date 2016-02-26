@@ -95,7 +95,9 @@ typedef struct {
 } YIELD_TEST;
 
 void Th_YieldTest (void const *arg);
-osThreadDef (Th_YieldTest, osPriorityNormal, 1, 0);
+// [ILG]
+osThreadDef (Th_YieldTest, osPriorityNormal, 2, 0);
+//osThreadDef (Th_YieldTest, osPriorityNormal, 1, 0);
 
 
 /* Definitions for thread management test in the ISR */
@@ -620,6 +622,9 @@ void TC_ThreadYield (void) {
   id[1] = osThreadCreate (osThread (Th_YieldTest), &cfg[1]);
   ASSERT_TRUE (id[0] != NULL);
   ASSERT_TRUE (id[1] != NULL);
+  // [ILG]
+  ASSERT_TRUE (id[0] != id[1]);
+
 
   /* Lower priority of the main thread to allow child threads to run */
   ASSERT_TRUE (osThreadSetPriority (id_main, osPriorityLow) == osOK);  
@@ -671,26 +676,38 @@ void TC_ThreadInterrupts (void) {
 
     ISR_ExNum = 0; /* Test: osThreadCreate */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+    // [ILG]
+    osDelay(2);
     ASSERT_TRUE (ThId_Isr == NULL);
     
     ISR_ExNum = 1; /* Test: osThreadGetId */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+    // [ILG]
+    osDelay(2);
     ASSERT_TRUE (ThId_Isr == NULL);
 
     ISR_ExNum = 2; /* Test: osThreadGetPriority */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+    // [ILG]
+    osDelay(2);
     ASSERT_TRUE (ThPr_Isr == osPriorityError);
     
     ISR_ExNum = 3; /* Test: osThreadSetPriority */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+    // [ILG]
+    osDelay(2);
     ASSERT_TRUE (ThSt_Isr == osErrorISR);
     
     ISR_ExNum = 4; /* Test: osThreadTerminate */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+    // [ILG]
+    osDelay(2);
     ASSERT_TRUE (ThSt_Isr == osErrorISR);
     
     ISR_ExNum = 5; /* Test: osThreadYield */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+    // [ILG]
+    osDelay(2);
     ASSERT_TRUE (ThSt_Isr == osErrorISR);
     
     NVIC_DisableIRQ((IRQn_Type)0);
