@@ -90,6 +90,14 @@ void MailQueue_IRQHandler (void) {
     case 9: /* TC_MailFromISRToThread */
       Isr_MailSend();
       break;
+
+    // [ILG]
+    case 10:
+      Mo_Isr = (MAIL_OBJ *)osMailAlloc  (MailQ_Id, osWaitForever);
+      break;
+    case 11:
+      Mo_Isr = (MAIL_OBJ *)osMailCAlloc (MailQ_Id, osWaitForever);
+      break;
   }
 }
 
@@ -146,7 +154,6 @@ void Th_MailTr (void const *arg) {
         /* Check mail content */
         memset(buf, 0xCC, MAIL_BUF_SZ);
         ASSERT_TRUE (memcmp(mo->Buf, buf, MAIL_BUF_SZ) == 0);
-        
       }
       /* Send "mail received" signal */
       osSignalSet (G_MailQ_ThreadId, SIGNAL_MAIL_RCVD);
@@ -497,36 +504,69 @@ void TC_MailInterrupts (void) {
   
   NVIC_EnableIRQ((IRQn_Type)0);
   
+  // [ILG]
+  MailQId_Isr = (osMailQId)(0-1);
+
   ISR_ExNum  = 0; /* Test: osMailCreate */
   NVIC_SetPendingIRQ((IRQn_Type)0);
+
+  // [ILG]
+  osDelay(2);
+
   ASSERT_TRUE (MailQId_Isr == NULL);
   
+  // [ILG]
+  Mo_Isr = NULL;
+
   ISR_ExNum  = 1; /* Test: osMailAlloc, no time-out */  
   NVIC_SetPendingIRQ((IRQn_Type)0);
+
+  // [ILG]
+  osDelay(2);
+
   ASSERT_TRUE (Mo_Isr != NULL);
   
   if (Mo_Isr != NULL) {
     ASSERT_TRUE (osMailFree (MailQ_Id, Mo_Isr) == osOK);
   }
 
+  // [ILG]
+  Mo_Isr = (MAIL_OBJ*)(0-1);
+
   ISR_ExNum  = 2; /* Test: osMailAlloc, with time-out */
   NVIC_SetPendingIRQ((IRQn_Type)0);
+
+  // [ILG]
+  osDelay(2);
+
   ASSERT_TRUE (Mo_Isr == NULL);
   
   if (Mo_Isr != NULL) {
     ASSERT_TRUE (osMailFree (MailQ_Id, Mo_Isr) == osOK);
   }
 
+  // [ILG]
+  Mo_Isr = NULL;
+
   ISR_ExNum  = 3; /* Test: osMailCAlloc, no time-out */
   NVIC_SetPendingIRQ((IRQn_Type)0);
+  // [ILG]
+  osDelay(2);
   ASSERT_TRUE (Mo_Isr != NULL);
   
   if (Mo_Isr != NULL) {
     ASSERT_TRUE (osMailFree (MailQ_Id, Mo_Isr) == osOK);
   }
 
+  // [ILG]
+  Mo_Isr = (MAIL_OBJ*)(0-1);
+
   ISR_ExNum  = 4; /* Test: osMailCAlloc, with time-out */
   NVIC_SetPendingIRQ((IRQn_Type)0);
+
+  // [ILG]
+  osDelay(2);
+
   ASSERT_TRUE (Mo_Isr == NULL);
   
   if (Mo_Isr != NULL) {
@@ -546,6 +586,10 @@ void TC_MailInterrupts (void) {
     ASSERT_TRUE (osMailPut (MailQ_Id, mo) == osOK);
   }
   NVIC_SetPendingIRQ((IRQn_Type)0);
+
+  // [ILG]
+  osDelay(2);
+
   ASSERT_TRUE (MailQ_Evt_Isr.status == osEventMail);
 
   if (MailQ_Evt_Isr.status == osEventMail) {
@@ -569,6 +613,9 @@ void TC_MailInterrupts (void) {
       Mo_Isr->Buf[i] = 0xAA;
     }
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
+    // [ILG]
+    osDelay(2);
 
     evt = osMailGet (MailQ_Id, 1000);
     ASSERT_TRUE (evt.status == osEventMail);
@@ -595,7 +642,15 @@ void TC_MailInterrupts (void) {
   ASSERT_TRUE (Mo_Isr != NULL);
 
   if (Mo_Isr != NULL) {
+
+    // [ILG]
+    MailQ_Stat_Isr = osErrorOS;
+
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
+    // [ILG]
+    osDelay(2);
+
     ASSERT_TRUE (MailQ_Stat_Isr == osOK);
     
     if (MailQ_Stat_Isr != osOK) {
@@ -603,6 +658,27 @@ void TC_MailInterrupts (void) {
       ASSERT_TRUE (osMailFree (MailQ_Id, Mo_Isr) == osOK);
     }
   }
+
+  // [ILG]
+  Mo_Isr = (MAIL_OBJ*)(0-1);
+  ISR_ExNum  = 11; /* Test: osMailAlloc, with infinite time-out */
+  NVIC_SetPendingIRQ((IRQn_Type)0);
+  osDelay(2);
+  ASSERT_TRUE (Mo_Isr == NULL);
+  if (Mo_Isr != NULL) {
+    ASSERT_TRUE (osMailFree (MailQ_Id, Mo_Isr) == osOK);
+  }
+
+  // [ILG]
+  Mo_Isr = (MAIL_OBJ*)(0-1);
+  ISR_ExNum  = 4; /* Test: osMailCAlloc, with infinite time-out */
+  NVIC_SetPendingIRQ((IRQn_Type)0);
+  osDelay(2);
+  ASSERT_TRUE (Mo_Isr == NULL);
+  if (Mo_Isr != NULL) {
+    ASSERT_TRUE (osMailFree (MailQ_Id, Mo_Isr) == osOK);
+  }
+  // ---
 
   NVIC_DisableIRQ((IRQn_Type)0);
 }

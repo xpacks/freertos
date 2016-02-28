@@ -68,6 +68,12 @@ void Semaphore_IRQHandler (void) {
     case 2: NumTokens_Isr = osSemaphoreWait    (SemId_Isr, 10);   break;
     case 3: SemSt_Isr     = osSemaphoreRelease (SemId_Isr);       break;
     case 4: SemSt_Isr     = osSemaphoreDelete  (SemId_Isr);       break;
+
+    // [ILG]
+    case 5:
+      NumTokens_Isr = osSemaphoreWait (SemId_Isr, osWaitForever);
+      break;
+
   }
 }
 
@@ -468,36 +474,88 @@ void TC_SemInterrupts (void) {
   
   NVIC_EnableIRQ((IRQn_Type)0);
   
+  // [ILG]
+  SemId_Isr = (osSemaphoreId)(0-1);
+
   ISR_ExNum = 0; /* Test: osSemaphoreCreate */
   NVIC_SetPendingIRQ((IRQn_Type)0);
+
+  // [ILG]
+  osDelay(2);
+
   ASSERT_TRUE (SemId_Isr == NULL);
-  
+
+  // [ILG]
+  SemId_Isr = NULL;
+
   if (SemId_Isr == NULL) {
     /* Create a isr test semaphore */
     SemId_Isr = osSemaphoreCreate (osSemaphore (Sem_ISR), 1);
     ASSERT_TRUE (SemId_Isr != NULL);
     
     if (SemId_Isr != NULL) {
+
+      // [ILG]
+      NumTokens_Isr = 0;
+
       ISR_ExNum = 1; /* Test: osSemaphoreWait (no time-out) */
       NVIC_SetPendingIRQ((IRQn_Type)0);
+
+      // [ILG]
+      osDelay(2);
+
       ASSERT_TRUE (NumTokens_Isr == -1);
       
       if (NumTokens_Isr == -1) {
+
+        // [ILG]
+        NumTokens_Isr = 0;
+
         ISR_ExNum = 2; /* Test: osSemaphoreWait (with time-out) */
         NVIC_SetPendingIRQ((IRQn_Type)0);
+
+        // [ILG]
+        osDelay(2);
+
         ASSERT_TRUE (NumTokens_Isr == -1);
         
         if (NumTokens_Isr == -1) {
           ASSERT_TRUE (osSemaphoreWait (SemId_Isr, 100) == 1);
 
+          // [ILG]
+          SemSt_Isr = osErrorOS;
+
           ISR_ExNum = 3; /* Test: osSemaphoreRelease */
           NVIC_SetPendingIRQ((IRQn_Type)0);
+
+          // [ILG]
+          osDelay(2);
+
           ASSERT_TRUE (SemSt_Isr == osOK);
         }
+
+        // [ILG]
+        NumTokens_Isr = 0;
+
+        ISR_ExNum = 5; /* Test: osSemaphoreWait (with infinite time-out) */
+        NVIC_SetPendingIRQ((IRQn_Type)0);
+
+        // [ILG]
+        osDelay(2);
+
+        ASSERT_TRUE (NumTokens_Isr == -1);
+        // -----
       }
-      
+
+      // [ILG]
+      SemSt_Isr = osErrorOS;
+
       ISR_ExNum = 4;  /* Test: osSemaphoreDelete */
       NVIC_SetPendingIRQ((IRQn_Type)0);
+
+      // [ILG]
+      osDelay(2);
+
       ASSERT_TRUE (SemSt_Isr == osErrorISR);
     }
   }

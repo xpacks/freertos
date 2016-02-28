@@ -545,15 +545,37 @@ void TC_MutexInterrupts (void) {
   ASSERT_TRUE (ISR_MutexId != NULL);
   
   if (ISR_MutexId != NULL) {
+
+    // [ILG]
+    ISR_OsStat = osOK;
+
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
+    // [ILG]
+    osDelay(2);
+
     ASSERT_TRUE (ISR_OsStat == osErrorISR);
   
+    // [ILG]
+    ISR_OsStat = osOK;
+
     Isr.Ex_Num = 2; /* Test: osMutexRelease */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
+    // [ILG]
+    osDelay(2);
+
     ASSERT_TRUE (ISR_OsStat == osErrorISR);
     
+    // [ILG]
+    ISR_OsStat = osOK;
+
     Isr.Ex_Num = 3; /* Test: osMutexDelete */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
+    // [ILG]
+    osDelay(2);
+
     ASSERT_TRUE (ISR_OsStat == osErrorISR);
     
     /* Delete mutex */

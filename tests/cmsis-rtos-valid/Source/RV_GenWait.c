@@ -82,19 +82,25 @@ void TC_GenWaitInterrupts (void) {
   
   ISR_ExNum = 0; /* Test: osDelay */
   NVIC_SetPendingIRQ((IRQn_Type)0);
+
   // [ILG]
   osDelay(2);
+
   ASSERT_TRUE (Stat_Isr == osErrorISR);
 
   // [ILG]
  #if (osFeature_Wait)
  // #if (osFeatureWait)
+
   ISR_ExNum = 1; /* Test: osWait */
+
   // [ILG]
   NVIC_SetPendingIRQ((IRQn_Type)0);
   // IRQ_SetPend (0);
+
   // [ILG]
   osDelay(2);
+
   ASSERT_TRUE (Stat_Isr == osErrorISR);
  #endif
   
