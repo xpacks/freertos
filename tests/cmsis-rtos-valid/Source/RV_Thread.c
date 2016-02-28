@@ -530,6 +530,14 @@ void TC_ThreadPriorityExec (void) {
         /* Abort test if thread instance not created */
         return;
       }
+
+      // [ILG]
+      for (int j = 0; j < 7; ++j) {
+          if (i != j) {
+              ASSERT_TRUE (inst[i] != inst[j]);
+          }
+      }
+      // -----
     }
     
     /* Clear execution array */
