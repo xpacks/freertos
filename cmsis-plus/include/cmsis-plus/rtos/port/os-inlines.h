@@ -102,7 +102,7 @@ namespace os
         __attribute__((always_inline))
         enter (void)
         {
-#if 0
+#if 1
           // TODO: on M0 & M0+ cores there is no BASEPRI
           uint32_t pri = __get_BASEPRI();
           __set_BASEPRI_MAX(OS_INTEGER_CRITICAL_SECTION_INTERRUPT_PRIORITY << ((8 - __NVIC_PRIO_BITS)));
@@ -118,7 +118,7 @@ namespace os
         __attribute__((always_inline))
         exit (rtos::critical::status_t status __attribute__((unused)))
         {
-#if 0
+#if 1
           uint32_t pri = __get_BASEPRI();
           __set_BASEPRI(status);
           return pri;
@@ -453,6 +453,9 @@ namespace os
             {
               return ENOTRECOVERABLE;
             }
+
+          obj->owner_ = &rtos::this_thread::thread ();
+          ++obj->count_;
           return result::ok;
         }
 
@@ -475,6 +478,9 @@ namespace os
             {
               return EAGAIN;
             }
+
+          obj->owner_ = &rtos::this_thread::thread ();
+          ++obj->count_;
           return result::ok;
         }
 
@@ -497,6 +503,9 @@ namespace os
             {
               return ETIMEDOUT;
             }
+
+          obj->owner_ = &rtos::this_thread::thread ();
+          ++obj->count_;
           return result::ok;
         }
 
@@ -505,6 +514,11 @@ namespace os
         unlock (rtos::Mutex* obj)
         {
           BaseType_t res;
+
+          if (obj->owner_ != &rtos::this_thread::thread ())
+            {
+              return EPERM;
+            }
 
           if (obj->type_ == mutex::type::recursive)
             {
@@ -519,6 +533,13 @@ namespace os
             {
               return ENOTRECOVERABLE;
             }
+
+          --obj->count_;
+          if (obj->count_ == 0)
+            {
+              obj->owner_ = nullptr;
+            }
+
           return result::ok;
         }
 
@@ -583,7 +604,12 @@ namespace os
         __attribute__((always_inline))
         create (rtos::Semaphore* obj)
         {
-          obj->port_.handle = xSemaphoreCreateCounting(obj->max_count_,
+          semaphore::count_t max = obj->max_count_;
+          if (max == 0)
+            {
+              max = 1;
+            }
+          obj->port_.handle = xSemaphoreCreateCounting(max,
                                                        obj->initial_count_);
         }
 
@@ -598,6 +624,12 @@ namespace os
         __attribute__((always_inline))
         post (rtos::Semaphore* obj)
         {
+#if 0
+          if (obj->count_ >= obj->max_count_)
+            {
+              return EOVERFLOW;
+            }
+#endif
           portBASE_TYPE thread_woken = pdFALSE;
 
           if (rtos::scheduler::in_handler_mode ())
@@ -717,7 +749,7 @@ namespace os
         __attribute__((always_inline))
         create (rtos::Message_queue* obj)
         {
-          obj->port_.handle = xQueueCreate(obj->msgs_, obj->queue_size_bytes_);
+          obj->port_.handle = xQueueCreate(obj->msgs_, obj->msg_size_bytes_);
         }
 
         inline static void
