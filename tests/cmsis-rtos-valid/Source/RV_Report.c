@@ -40,9 +40,13 @@ uint32_t    current_result;       /* Current test case result                 */
 #define CAS (&current_assertions)             /* Current assertions           */
 
 // [ILG]
-//#define PRINT(x) MsgPrint x
+#if 0
 #define PRINT(x) trace_printf x
+#define FLUSH()
+#else
+#define PRINT(x) MsgPrint x
 #define FLUSH()  MsgFlush()
+#endif
 
 static uint8_t Passed[] = "PASSED";
 static uint8_t Warning[] = "WARNING";
@@ -181,7 +185,8 @@ BOOL tr_File_Close (void) {
   PRINT(("</test>\n"));
   PRINT(("</report>\n"));
 #else
-  PRINT(("\nTest Summary: %d Tests, %d Executed, %d Passed, %d Failed, %d Warnings.\n", 
+  PRINT(("\n"));
+  PRINT(("Test Summary: %d Tests, %d Executed, %d Passed, %d Failed, %d Warnings.\n",
          test_report.tests, 
          test_report.executed, 
          test_report.passed, 
@@ -214,7 +219,10 @@ BOOL As_File_Dbgi (TC_RES res, const char *fn, uint32_t ln, char *desc) {
   PRINT(("<line>%d</line>\n", ln));
   PRINT(("</detail>\n"));
 #else
-  PRINT(("\n  %s (%d)", fn, ln));
+  // [ILG]
+  PRINT(("\n"));
+  PRINT(("  %s (%d)", fn, ln));
+  // PRINT(("\n  %s (%d)", fn, ln));
   if (res==WARNING) PRINT((" [WARNING]"));
   if (res==FAILED) PRINT((" [FAILED]"));
   if (desc!=NULL) PRINT((" %s", desc));
