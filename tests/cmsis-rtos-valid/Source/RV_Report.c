@@ -40,7 +40,7 @@ uint32_t    current_result;       /* Current test case result                 */
 #define CAS (&current_assertions)             /* Current assertions           */
 
 // [ILG]
-#if 0
+#if defined(TRACE)
 #define PRINT(x) trace_printf x
 #define FLUSH()
 #else
