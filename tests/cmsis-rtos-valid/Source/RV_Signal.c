@@ -309,12 +309,12 @@ void TC_SignalChildToParent (void) {
       // [ILG]
       // Time known durations, to be used as thresholds.
       uint32_t bg = osKernelSysTick();
-      osDelay(9);
-      uint32_t t_9 = osKernelSysTick() - bg;
+      osDelay(8);
+      uint32_t t_8 = osKernelSysTick() - bg;
 
       bg = osKernelSysTick();
-      osDelay(11);
-      uint32_t t_11 = osKernelSysTick() - bg;
+      osDelay(12);
+      uint32_t t_12 = osKernelSysTick() - bg;
 
       // The thread will set a signal after 10 ticks.
       ThId_Sig = osThreadCreate(osThread(Th_Wakeup), NULL);
@@ -325,9 +325,9 @@ void TC_SignalChildToParent (void) {
           evt = osSignalWait (1, 100);
           uint32_t t_10 = osKernelSysTick() - bg;
           ASSERT_TRUE (evt.status == osEventSignal);
-          // The actual wait should be between 9 and 11.
-          ASSERT_TRUE (t_9 < t_10);
-          ASSERT_TRUE (t_10 < t_11);
+          // The actual wait should be between 8 and 12.
+          ASSERT_TRUE (t_8 < t_10);
+          ASSERT_TRUE (t_10 < t_12);
       }
       // ---
 
