@@ -1440,7 +1440,9 @@ StackType_t *pxTopOfStack;
 		{
 			taskENTER_CRITICAL();
 			{
-				if( prvTaskIsTaskSuspended( pxTCB ) == pdTRUE )
+			  // [ILG]
+        if( 1 || prvTaskIsTaskSuspended( pxTCB ) == pdTRUE )
+				// if( prvTaskIsTaskSuspended( pxTCB ) == pdTRUE )
 				{
 					traceTASK_RESUME( pxTCB );
 
