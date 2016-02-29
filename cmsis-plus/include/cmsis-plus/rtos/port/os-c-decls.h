@@ -37,7 +37,6 @@
 typedef struct os_thread_port_data_s
   {
     void* handle;
-    void* event_flags;
   }os_thread_port_data_t;
 
 #endif /* OS_INCLUDE_PORT_RTOS_THREAD */
