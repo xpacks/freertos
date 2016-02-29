@@ -137,7 +137,7 @@ namespace os
 
         inline static result_t
         __attribute__((always_inline))
-        sleep_for (duration_t ticks)
+        wait (duration_t ticks)
         {
           vTaskDelay (ticks);
           return ETIMEDOUT;
@@ -229,8 +229,10 @@ namespace os
               // local storage pointers.
               vTaskSetThreadLocalStoragePointer (th, 0, obj);
 
-            } else {
-                assert(res == pdPASS);
+            }
+          else
+            {
+              assert(res == pdPASS);
             }
         }
 
@@ -276,6 +278,7 @@ namespace os
         wakeup (rtos::Thread* obj)
         {
           vTaskResume (obj->port_.handle);
+          taskYIELD();
         }
 
         inline static thread::priority_t
@@ -306,19 +309,19 @@ namespace os
         inline static result_t
         __attribute__((always_inline))
         join (rtos::Thread* obj)
-        {
-          for (;;)
-            {
-              if (obj->sched_state_ == thread::state::terminated)
-                {
-                  break;
-                }
-              //Systick_clock::sleep_for (1);
-              xEventGroupWaitBits (obj->port_.event_flags, 1, pdTRUE, pdFALSE,
-              portMAX_DELAY);
-            }
-          return result::ok;
-        }
+          {
+            for (;;)
+              {
+                if (obj->sched_state_ == thread::state::terminated)
+                  {
+                    break;
+                  }
+                //Systick_clock::sleep_for (1);
+                xEventGroupWaitBits (obj->port_.event_flags, 1, pdTRUE, pdFALSE,
+                    portMAX_DELAY);
+              }
+            return result::ok;
+          }
 #endif
 
         inline static result_t
