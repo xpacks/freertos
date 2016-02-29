@@ -33,6 +33,10 @@ void Th_Sig (void const *arg);          /* Signaling thread prototype         */
 osThreadDef (Th_Sig, osPriorityNormal, 1, 200);
 osThreadId ThId_Sig;
 
+// [ILG]
+void Th_Wakeup (void const *arg);          /* Signaling thread prototype         */
+osThreadDef (Th_Wakeup, osPriorityBelowNormal, 1, 0);
+// ----
 
 /* Definitions for TC_SignalChildToChild */
 void Th_Sig_Child_0 (void const *arg);
@@ -87,6 +91,14 @@ void Th_Sig (void const *arg) {
   }
 }
 
+// [ILG]
+void Th_Wakeup (void const *arg)
+{
+  osDelay(10);
+  /* Send signal back to the main thread */
+  ASSERT_TRUE (osSignalSet (Var_ThreadId, 1) != 0x80000000);
+}
+// -----
 
 /*-----------------------------------------------------------------------------
  *      Default IRQ Handler
@@ -293,6 +305,32 @@ void TC_SignalChildToParent (void) {
   ASSERT_TRUE (Var_ThreadId != NULL);
   
   if (Var_ThreadId != NULL) {
+
+      // [ILG]
+      // Time known durations, to be used as thresholds.
+      uint32_t bg = osKernelSysTick();
+      osDelay(9);
+      uint32_t t_9 = osKernelSysTick() - bg;
+
+      bg = osKernelSysTick();
+      osDelay(11);
+      uint32_t t_11 = osKernelSysTick() - bg;
+
+      // The thread will set a signal after 10 ticks.
+      ThId_Sig = osThreadCreate(osThread(Th_Wakeup), NULL);
+      ASSERT_TRUE (ThId_Sig != NULL);
+
+      if (ThId_Sig != NULL) {
+          bg = osKernelSysTick();
+          evt = osSignalWait (1, 100);
+          uint32_t t_10 = osKernelSysTick() - bg;
+          ASSERT_TRUE (evt.status == osEventSignal);
+          // The actual wait should be between 9 and 11.
+          ASSERT_TRUE (t_9 < t_10);
+          ASSERT_TRUE (t_10 < t_11);
+      }
+      // ---
+
     /* Create signaling thread */
     ThId_Sig = osThreadCreate (osThread (Th_Sig), &arg);
     ASSERT_TRUE (ThId_Sig != NULL);
@@ -352,6 +390,11 @@ void TC_SignalChildToChild (void) {
     if (evt.status == osEventSignal) {
       ASSERT_TRUE ((evt.value.signals & 0x03) == 0x03);
     }
+
+    // [ILG]
+    osThreadTerminate(id[0]);
+    osThreadTerminate(id[1]);
+    // -----
   }
 }
 
