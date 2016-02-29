@@ -19,7 +19,9 @@ extern void (*TST_IRQHandler)(void);
 extern uint32_t ISR_ExNum;
 
 // Test main function
-extern void cmsis_rv (void);
+// [ILG]
+extern int cmsis_rv (void);
+// extern void cmsis_rv (void);
 
 // Test cases
 extern void TC_ThreadCreate (void);

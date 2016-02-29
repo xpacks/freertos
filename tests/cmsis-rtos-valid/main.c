@@ -16,7 +16,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "cmsis_rv.h"
 
 #include <cmsis-plus/rtos/os-c-api.h>
@@ -27,8 +26,33 @@ os_main (int argc, char* argv[])
 {
   trace_dump_args (argc, argv);
 
-  cmsis_rv();
-
-  return 1;
+  return cmsis_rv ();
 }
 
+extern void
+(*TST_IRQHandler) (void);
+
+void
+WWDG_IRQHandler (void);
+
+void
+WWDG_IRQHandler (void)
+{
+  if (TST_IRQHandler != NULL)
+    {
+      TST_IRQHandler ();
+      return;
+    }
+  asm volatile ("bkpt 0");
+  for (;;)
+    ;
+}
+
+void
+vApplicationStackOverflowHook(void* task, const char* name);
+
+void
+vApplicationStackOverflowHook(void* task, const char* name)
+{
+  printf(">>> Stack overflow %p '%s'!\n", task, name);
+}

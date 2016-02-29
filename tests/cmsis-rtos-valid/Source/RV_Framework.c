@@ -6,6 +6,10 @@
  *----------------------------------------------------------------------------*/
 #include "cmsis_rv.h" 
 #include "RV_Framework.h"
+// [ILG]
+#include "RV_Report.h"
+
+extern TEST_REPORT  test_report;
 
 /*=======0=========1=========2=========3=========4=========5=========6=========7=========8=========9=========0=========1====*/
 /**
@@ -48,9 +52,12 @@ Program flow:
   -# Test report footer is written to the standard output
   -# Debug session ends in dead loop
 */
-void cmsis_rv (void) {
+
+// [ILG]
+int
+cmsis_rv (void) {
   const char *fn;
-  uint32_t tc, no;
+  static uint32_t tc, no;
   
   /* Init test suite */
   if (ts.Init) {
@@ -75,6 +82,9 @@ void cmsis_rv (void) {
   ritf.Close ();                          /* Close test report                */
 
   closeDebug();                           /* Close debug session              */
+
+  // [ILG]
+  return test_report.failed;
 }
 
 /**

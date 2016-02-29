@@ -18,25 +18,9 @@ uint32_t ISR_ExNum;
 /*-----------------------------------------------------------------------------
  *      Default IRQ Handler
  *----------------------------------------------------------------------------*/
-#if 1
-// [ILG]
-void
-WWDG_IRQHandler (void)
-{
-  if (TST_IRQHandler != NULL)
-    {
-      TST_IRQHandler ();
-      return;
-    }
-  asm volatile ("bkpt 0");
-  for (;;)
-    ;
-}
-#else
 void DEF_IRQHandler (void) {
   if (TST_IRQHandler!=NULL) TST_IRQHandler();
 }
-#endif
 
 
 /*-----------------------------------------------------------------------------
