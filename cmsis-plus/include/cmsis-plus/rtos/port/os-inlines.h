@@ -139,7 +139,10 @@ namespace os
         __attribute__((always_inline))
         wait (duration_t ticks)
         {
-          vTaskDelay (ticks);
+          duration_t t = ticks / 10;
+          t = ((t == 0) ? 1 : t);
+          // trace_printf("p:%s(%d)=%d\n", __func__, ticks, t);
+          vTaskDelay (t);
           return ETIMEDOUT;
         }
       };
@@ -278,6 +281,7 @@ namespace os
         wakeup (rtos::Thread* obj)
         {
           vTaskResume (obj->port_.handle);
+          trace_putchar('^');
           taskYIELD();
         }
 
