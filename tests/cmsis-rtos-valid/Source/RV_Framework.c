@@ -57,7 +57,7 @@ Program flow:
 int
 cmsis_rv (void) {
   const char *fn;
-  static uint32_t tc, no;
+  uint32_t tc, no;
   
   /* Init test suite */
   if (ts.Init) {
