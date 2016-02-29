@@ -104,8 +104,10 @@ namespace os
         {
 #if 1
           // TODO: on M0 & M0+ cores there is no BASEPRI
-          uint32_t pri = __get_BASEPRI();
-          __set_BASEPRI_MAX(OS_INTEGER_CRITICAL_SECTION_INTERRUPT_PRIORITY << ((8 - __NVIC_PRIO_BITS)));
+          uint32_t pri = __get_BASEPRI ();
+          __set_BASEPRI_MAX (
+              OS_INTEGER_CRITICAL_SECTION_INTERRUPT_PRIORITY
+                  << ((8 - __NVIC_PRIO_BITS)));
           return pri;
 #else
           taskENTER_CRITICAL();
@@ -119,8 +121,8 @@ namespace os
         exit (rtos::critical::status_t status __attribute__((unused)))
         {
 #if 1
-          uint32_t pri = __get_BASEPRI();
-          __set_BASEPRI(status);
+          uint32_t pri = __get_BASEPRI ();
+          __set_BASEPRI (status);
           return pri;
 #else
           taskEXIT_CRITICAL();
@@ -216,35 +218,49 @@ namespace os
           res = xTaskCreate((TaskFunction_t ) rtos::Thread::_invoke_with_exit,
                             (const portCHAR *) obj->name (), stack_size_words,
                             obj, makeFreeRtosPriority (obj->prio_), &th);
-          assert(res == pdPASS);
+          if (res == pdPASS)
+            {
+              obj->func_result_ = nullptr;
 
-          obj->func_result_ = nullptr;
+              // Remember pointer to implementation.
+              obj->port_.handle = th;
 
-          // Remember pointer to implementation.
-          obj->port_.handle = th;
+              // Store the pointer to this Thread as index 0 in the FreeRTOS
+              // local storage pointers.
+              vTaskSetThreadLocalStoragePointer (th, 0, obj);
 
-          // Store the pointer to this Thread as index 0 in the FreeRTOS
-          // local storage pointers.
-          vTaskSetThreadLocalStoragePointer (th, 0, obj);
-
-          EventGroupHandle_t eh = xEventGroupCreate ();
-          xEventGroupClearBits (eh, 1);
-
-          obj->port_.event_flags = eh;
+            } else {
+                assert(res == pdPASS);
+            }
         }
 
         inline static void
         __attribute__((always_inline))
-        destroy (rtos::Thread* obj)
+        destroy (rtos::Thread* obj __attribute__((unused)))
         {
-          vEventGroupDelete (obj->port_.event_flags);
+          ;
+        }
+
+        inline static void
+        __attribute__((always_inline))
+        exit (rtos::Thread* obj)
+        {
+          // Clear the handle, further uses should crash.
+          obj->port_.handle = nullptr;
+
+          // Passing a nullptr excludes killing another thread.
+          vTaskDelete (nullptr);
+          // Does not return!
         }
 
         inline static result_t
         __attribute__((always_inline))
         kill (rtos::Thread* obj)
         {
-          vTaskSuspend (obj->port_.handle);
+          // Called from another thread.
+          //vTaskSuspend (obj->port_.handle);
+
+          vTaskDelete (obj->port_.handle);
           return result::ok;
         }
 
@@ -281,9 +297,12 @@ namespace os
 
           vTaskPrioritySet (obj->port_.handle, makeFreeRtosPriority (prio));
 
+          taskYIELD();
+
           return result::ok;
         }
 
+#if 0
         inline static result_t
         __attribute__((always_inline))
         join (rtos::Thread* obj)
@@ -300,6 +319,7 @@ namespace os
             }
           return result::ok;
         }
+#endif
 
         inline static result_t
         __attribute__((always_inline))
@@ -308,16 +328,7 @@ namespace os
           return result::ok;
         }
 
-        inline static void
-        __attribute__((always_inline))
-        exit (rtos::Thread* obj)
-        {
-          xEventGroupSetBits (obj->port_.event_flags, 1);
-
-          obj->port_.handle = nullptr;
-          vTaskDelete (nullptr);
-        }
-
+        // --------------------------------------------------------------------
       };
 
 #endif /* OS_INCLUDE_PORT_RTOS_THREAD */
@@ -401,6 +412,8 @@ namespace os
             }
           return result::ok;
         }
+
+        // --------------------------------------------------------------------
       };
 
 #endif /* OS_INCLUDE_PORT_RTOS_TIMER */
@@ -577,6 +590,7 @@ namespace os
           return result::ok;
         }
 
+        // --------------------------------------------------------------------
       };
 #endif /* OS_INCLUDE_PORT_RTOS_MUTEX */
 
@@ -721,6 +735,7 @@ namespace os
           return result::ok;
         }
 
+        // --------------------------------------------------------------------
       };
 
 #endif /* OS_INCLUDE_PORT_RTOS_SEMAPHORE */
@@ -897,6 +912,8 @@ namespace os
           obj->count_ = 0;
           return result::ok;
         }
+
+        // --------------------------------------------------------------------
       };
 
 #endif /* OS_INCLUDE_PORT_RTOS_MESSAGE_QUEUE */
@@ -1131,6 +1148,8 @@ namespace os
           // This is a custom call added to FreeRTOS.
           return xEventFlagsWaiting (obj->port_.handle);
         }
+
+        // --------------------------------------------------------------------
       };
 
 #endif /* OS_INCLUDE_PORT_RTOS_EVENT_FLAGS */
