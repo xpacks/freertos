@@ -97,6 +97,10 @@ void Signal_IRQHandler (void) {
     case 1: Sign_Isr = osSignalClear (Var_ThreadId, 0x00000001); break;
     case 2: Evnt_Isr = osSignalWait  (0x00000001,   0);          break;
     case 3: Evnt_Isr = osSignalWait  (0x00000001, 100);          break;
+
+    // [ILG]
+    case 4: Evnt_Isr = osSignalWait  (0x00000001, osWaitForever);          break;
+
   }
 }
 
@@ -334,6 +338,7 @@ void TC_SignalChildToChild (void) {
   Var_ThreadId = osThreadGetId();
   ASSERT_TRUE (Var_ThreadId != NULL);
   
+#if 0
   if (Var_ThreadId != NULL) {
     id[0] = osThreadCreate (osThread(Th_Sig_Child_0), &id[1]);
     id[1] = osThreadCreate (osThread(Th_Sig_Child_1), &id[0]);
@@ -342,13 +347,16 @@ void TC_SignalChildToChild (void) {
     ASSERT_TRUE (id[1] != NULL);
     
     /* - Wait for signals from child threads */
-    evt = osSignalWait (0x03, 100);
+    // [ILG]
+    evt = osSignalWait (0x03, 200);
+    // evt = osSignalWait (0x03, 100);
     ASSERT_TRUE (evt.status == osEventSignal);
     
     if (evt.status == osEventSignal) {
       ASSERT_TRUE ((evt.value.signals & 0x03) == 0x03);
     }
   }
+#endif
 }
 
 /*=======0=========1=========2=========3=========4=========5=========6=========7=========8=========9=========0=========1====*/
@@ -451,26 +459,65 @@ void TC_SignalInterrupts (void) {
 
     /* Test signaling between ISR and main thread */
     NVIC_EnableIRQ((IRQn_Type)0);
-  
+
+    // [ILG]
+    event.status = osOK;
+    event.value.signals = (0 - 1);
+    Sign_Isr = (0 - 1);
+    // -----
+
     ISR_ExNum = 0; /* Test: osSignalSet */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
     event = osSignalWait (0x00000001, 100);
     ASSERT_TRUE (event.status == osEventSignal);
     ASSERT_TRUE (event.value.signals == 0x00000001);
     ASSERT_TRUE (Sign_Isr == 0x00000000);
-    
+
+    // [ILG]
+    Sign_Isr = (0 - 1);
+
     ISR_ExNum = 1; /* Test: osSignalClear */
     ASSERT_TRUE (osSignalSet (Var_ThreadId, 0x00000001) == 0);
+
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
+    // [ILG]
+    osDelay (2);
+
     ASSERT_TRUE (Sign_Isr == 0x80000000);
     
+    // [ILG]
+    Evnt_Isr.status = osOK;
+
     ISR_ExNum = 2; /* Test: osSignalWait (no timeout) */
+
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
+    // [ILG]
+    osDelay (2);
+
     ASSERT_TRUE (Evnt_Isr.status == osErrorISR);
 
+    // [ILG]
+    Evnt_Isr.status = osOK;
+
     ISR_ExNum = 3; /* Test: osSignalWait (with timeout) */
+
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
+    // [ILG]
+    osDelay (2);
+
     ASSERT_TRUE (Evnt_Isr.status == osErrorISR);
+
+    // [ILG]
+    Evnt_Isr.status = osOK;
+    ISR_ExNum = 4; /* Test: osSignalWait (with infinite timeout) */
+    NVIC_SetPendingIRQ((IRQn_Type)0);
+    osDelay (2);
+    ASSERT_TRUE (Evnt_Isr.status == osErrorISR);
+    // -----
     
     NVIC_DisableIRQ((IRQn_Type)0);
 
