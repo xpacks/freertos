@@ -338,7 +338,6 @@ void TC_SignalChildToChild (void) {
   Var_ThreadId = osThreadGetId();
   ASSERT_TRUE (Var_ThreadId != NULL);
   
-#if 0
   if (Var_ThreadId != NULL) {
     id[0] = osThreadCreate (osThread(Th_Sig_Child_0), &id[1]);
     id[1] = osThreadCreate (osThread(Th_Sig_Child_1), &id[0]);
@@ -347,16 +346,13 @@ void TC_SignalChildToChild (void) {
     ASSERT_TRUE (id[1] != NULL);
     
     /* - Wait for signals from child threads */
-    // [ILG]
-    evt = osSignalWait (0x03, 200);
-    // evt = osSignalWait (0x03, 100);
+    evt = osSignalWait (0x03, 100);
     ASSERT_TRUE (evt.status == osEventSignal);
     
     if (evt.status == osEventSignal) {
       ASSERT_TRUE ((evt.value.signals & 0x03) == 0x03);
     }
   }
-#endif
 }
 
 /*=======0=========1=========2=========3=========4=========5=========6=========7=========8=========9=========0=========1====*/
