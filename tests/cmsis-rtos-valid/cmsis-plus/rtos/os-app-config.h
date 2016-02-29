@@ -24,8 +24,11 @@
 #ifndef CMSIS_PLUS_RTOS_OS_APP_CONFIG_H_
 #define CMSIS_PLUS_RTOS_OS_APP_CONFIG_H_
 
+// ----------------------------------------------------------------------------
+
 #define OS_INTEGER_SYSTICK_FREQUENCY_HZ                     (1000)
 
+#define OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES               (1024)
 #define OS_INTEGER_MAX_NUMBER_OF_THREADS                    (10)
 
 
