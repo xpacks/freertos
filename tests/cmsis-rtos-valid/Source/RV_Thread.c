@@ -688,8 +688,10 @@ void TC_ThreadInterrupts (void) {
 
     ISR_ExNum = 0; /* Test: osThreadCreate */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
     // [ILG]
     osDelay(2);
+
     ASSERT_TRUE (ThId_Isr == NULL);
     
     // [ILG]
@@ -697,8 +699,10 @@ void TC_ThreadInterrupts (void) {
 
     ISR_ExNum = 1; /* Test: osThreadGetId */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
     // [ILG]
     osDelay(2);
+
     ASSERT_TRUE (ThId_Isr == NULL);
 
     // [ILG]
@@ -706,8 +710,10 @@ void TC_ThreadInterrupts (void) {
 
     ISR_ExNum = 2; /* Test: osThreadGetPriority */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
     // [ILG]
     osDelay(2);
+
     ASSERT_TRUE (ThPr_Isr == osPriorityError);
 
     // [ILG]
@@ -715,8 +721,10 @@ void TC_ThreadInterrupts (void) {
 
     ISR_ExNum = 3; /* Test: osThreadSetPriority */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
     // [ILG]
     osDelay(2);
+
     ASSERT_TRUE (ThSt_Isr == osErrorISR);
 
     // [ILG]
@@ -724,8 +732,10 @@ void TC_ThreadInterrupts (void) {
 
     ISR_ExNum = 4; /* Test: osThreadTerminate */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
     // [ILG]
     osDelay(2);
+
     ASSERT_TRUE (ThSt_Isr == osErrorISR);
 
     // [ILG]
@@ -733,8 +743,10 @@ void TC_ThreadInterrupts (void) {
 
     ISR_ExNum = 5; /* Test: osThreadYield */
     NVIC_SetPendingIRQ((IRQn_Type)0);
+
     // [ILG]
     osDelay(2);
+
     ASSERT_TRUE (ThSt_Isr == osErrorISR);
     
     NVIC_DisableIRQ((IRQn_Type)0);
