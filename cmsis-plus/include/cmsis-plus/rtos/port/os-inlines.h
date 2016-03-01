@@ -95,41 +95,35 @@ namespace os
 
       } /* namespace scheduler */
 
-      namespace critical
+      namespace interrupts
       {
-        // Enter an IRQ critical section
-        inline rtos::critical::status_t
-        __attribute__((always_inline))
-        enter (void)
+        class Critical_section
         {
-#if 1
-          // TODO: on M0 & M0+ cores there is no BASEPRI
-          uint32_t pri = __get_BASEPRI ();
-          __set_BASEPRI_MAX (
-              OS_INTEGER_CRITICAL_SECTION_INTERRUPT_PRIORITY
-                  << ((8 - __NVIC_PRIO_BITS)));
-          return pri;
-#else
-          taskENTER_CRITICAL();
-          return 0;
-#endif
-        }
 
-        // Exit an IRQ critical section
-        inline rtos::critical::status_t
-        __attribute__((always_inline))
-        exit (rtos::critical::status_t status __attribute__((unused)))
-        {
-#if 1
-          uint32_t pri = __get_BASEPRI ();
-          __set_BASEPRI (status);
-          return pri;
-#else
-          taskEXIT_CRITICAL();
-          return 0;
-#endif
-        }
-      }
+        public:
+
+          // Enter an IRQ critical section
+          inline static rtos::interrupts::status_t
+          __attribute__((always_inline))
+          enter (void)
+          {
+            // TODO: on M0 & M0+ cores there is no BASEPRI
+            uint32_t pri = __get_BASEPRI ();
+            __set_BASEPRI_MAX (
+                OS_INTEGER_CRITICAL_SECTION_INTERRUPT_PRIORITY
+                    << ((8 - __NVIC_PRIO_BITS)));
+            return pri;
+          }
+
+          // Exit an IRQ critical section
+          inline static void
+          __attribute__((always_inline))
+          exit (rtos::interrupts::status_t status __attribute__((unused)))
+          {
+            __set_BASEPRI (status);
+          }
+        };
+      } /* namespace interrupts */
 
       class Systick_clock
       {
@@ -235,7 +229,6 @@ namespace os
               // Store the pointer to this Thread as index 0 in the FreeRTOS
               // local storage pointers.
               vTaskSetThreadLocalStoragePointer (th, 0, obj);
-
             }
           else
             {
@@ -247,9 +240,10 @@ namespace os
         __attribute__((always_inline))
         destroy (rtos::Thread* obj __attribute__((unused)))
         {
-          ;
+          vTaskDelete (obj->port_.handle);
         }
 
+#if 0
         inline static void
         __attribute__((always_inline))
         exit (rtos::Thread* obj)
@@ -272,6 +266,7 @@ namespace os
           vTaskDelete (obj->port_.handle);
           return result::ok;
         }
+#endif
 
         inline static void
         __attribute__((always_inline))
@@ -308,6 +303,7 @@ namespace os
 
           vTaskPrioritySet (obj->port_.handle, makeFreeRtosPriority (prio));
 
+          // The manual says it is done, but apparently still needed.
           taskYIELD();
 
           return result::ok;
