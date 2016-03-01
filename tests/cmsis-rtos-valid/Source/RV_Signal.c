@@ -329,7 +329,7 @@ void TC_SignalChildToParent (void) {
           ASSERT_TRUE (t_min < t_10);
           ASSERT_TRUE (t_10 < t_max);
       }
-      osThreadTerminate(ThId_Sig);
+      ASSERT_TRUE (osThreadTerminate(ThId_Sig) == osOK);
 
       ThId_Sig = osThreadCreate(osThread(Th_Wakeup), NULL);
       ASSERT_TRUE (ThId_Sig != NULL);
@@ -343,7 +343,7 @@ void TC_SignalChildToParent (void) {
           ASSERT_TRUE (t_min < t_10);
           ASSERT_TRUE (t_10 < t_max);
       }
-      osThreadTerminate(ThId_Sig);
+      ASSERT_TRUE (osThreadTerminate(ThId_Sig) == osOK);
       // ---
 
     /* Create signaling thread */
