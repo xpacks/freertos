@@ -309,12 +309,12 @@ void TC_SignalChildToParent (void) {
       // [ILG]
       // Time known durations, to be used as thresholds.
       uint32_t bg = osKernelSysTick();
-      osDelay(8);
-      uint32_t t_8 = osKernelSysTick() - bg;
+      osDelay(9);
+      uint32_t t_min = osKernelSysTick() - bg;
 
       bg = osKernelSysTick();
-      osDelay(12);
-      uint32_t t_12 = osKernelSysTick() - bg;
+      osDelay(14);
+      uint32_t t_max = osKernelSysTick() - bg;
 
       // The thread will set a signal after 10 ticks.
       ThId_Sig = osThreadCreate(osThread(Th_Wakeup), NULL);
@@ -326,9 +326,24 @@ void TC_SignalChildToParent (void) {
           uint32_t t_10 = osKernelSysTick() - bg;
           ASSERT_TRUE (evt.status == osEventSignal);
           // The actual wait should be between 8 and 12.
-          ASSERT_TRUE (t_8 < t_10);
-          ASSERT_TRUE (t_10 < t_12);
+          ASSERT_TRUE (t_min < t_10);
+          ASSERT_TRUE (t_10 < t_max);
       }
+      osThreadTerminate(ThId_Sig);
+
+      ThId_Sig = osThreadCreate(osThread(Th_Wakeup), NULL);
+      ASSERT_TRUE (ThId_Sig != NULL);
+
+      if (ThId_Sig != NULL) {
+          bg = osKernelSysTick();
+          evt = osSignalWait (1, osWaitForever);
+          uint32_t t_10 = osKernelSysTick() - bg;
+          ASSERT_TRUE (evt.status == osEventSignal);
+          // The actual wait should be between 8 and 12.
+          ASSERT_TRUE (t_min < t_10);
+          ASSERT_TRUE (t_10 < t_max);
+      }
+      osThreadTerminate(ThId_Sig);
       // ---
 
     /* Create signaling thread */
