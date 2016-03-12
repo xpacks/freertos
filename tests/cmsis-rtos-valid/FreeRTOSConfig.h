@@ -95,13 +95,13 @@ extern uint32_t SystemCoreClock;
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS 1
 
 #define configUSE_PREEMPTION					1
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION	1
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION	0
 #define configUSE_QUEUE_SETS					1
 #define configUSE_IDLE_HOOK						0
 #define configUSE_TICK_HOOK						0
 #define configCPU_CLOCK_HZ						( SystemCoreClock )
 #define configTICK_RATE_HZ						( OS_INTEGER_SYSTICK_FREQUENCY_HZ )
-#define configMAX_PRIORITIES					( 32 )
+#define configMAX_PRIORITIES					( 255 )
 #define configMINIMAL_STACK_SIZE				( ( unsigned short ) 300 )
 #define configTOTAL_HEAP_SIZE					( ( size_t ) ( 40 * 1024 ) )
 #define configMAX_TASK_NAME_LEN					( 10 )
