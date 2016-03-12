@@ -140,6 +140,8 @@ void Thread_IRQHandler (void) {
 void Th_MultiInst (void const *arg) {
   uint8_t *var = (uint8_t *)arg;
   *var += 1;
+  // [ILG]
+  osDelay(10);
 }
 
 

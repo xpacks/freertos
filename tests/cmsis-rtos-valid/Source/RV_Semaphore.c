@@ -97,6 +97,8 @@ static void Th_TestSemaphore (void const *arg) {
       Var_ThreadStatus[par] = 2;
     }
   }
+  // [ILG]
+  osDelay(10);
 }
 
 /*-----------------------------------------------------------------------------
