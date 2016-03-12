@@ -247,25 +247,25 @@ namespace os
         inline static void
         __attribute__((always_inline))
         exit (rtos::Thread* obj)
-        {
-          // Clear the handle, further uses should crash.
-          obj->port_.handle = nullptr;
+          {
+            // Clear the handle, further uses should crash.
+            obj->port_.handle = nullptr;
 
-          // Passing a nullptr excludes killing another thread.
-          vTaskDelete (nullptr);
-          // Does not return!
-        }
+            // Passing a nullptr excludes killing another thread.
+            vTaskDelete (nullptr);
+            // Does not return!
+          }
 
         inline static result_t
         __attribute__((always_inline))
         kill (rtos::Thread* obj)
-        {
-          // Called from another thread.
-          //vTaskSuspend (obj->port_.handle);
+          {
+            // Called from another thread.
+            //vTaskSuspend (obj->port_.handle);
 
-          vTaskDelete (obj->port_.handle);
-          return result::ok;
-        }
+            vTaskDelete (obj->port_.handle);
+            return result::ok;
+          }
 #endif
 
         inline static void
@@ -1026,7 +1026,7 @@ namespace os
         inline static result_t
         __attribute__((always_inline))
         timed_wait (rtos::Event_flags* obj, flags::mask_t mask,
-                    flags::mask_t* oflags, flags::mode_t mode, systicks_t ticks)
+                    systicks_t ticks, flags::mask_t* oflags, flags::mode_t mode)
         {
           EventBits_t bits;
 
