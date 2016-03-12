@@ -240,7 +240,10 @@ namespace os
         __attribute__((always_inline))
         destroy (rtos::Thread* obj __attribute__((unused)))
         {
-          vTaskDelete (obj->port_.handle);
+          void* handle = obj->port_.handle;
+          // Remove the reference to the destroyed thread.
+          obj->port_.handle = nullptr;
+          vTaskDelete (handle);
         }
 
 #if 0
