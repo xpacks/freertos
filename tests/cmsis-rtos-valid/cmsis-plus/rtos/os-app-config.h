@@ -55,10 +55,10 @@ typedef struct os_thread_user_storage_s
 #define OS_INCLUDE_PORT_RTOS_TIMER                          (1)
 #define OS_INCLUDE_PORT_RTOS_MUTEX                          (1)
 // #define OS_INCLUDE_PORT_RTOS_CONDITION_VARIABLE             (1)
-#define OS_INCLUDE_PORT_RTOS_SEMAPHORE                      (1)
+// #define OS_INCLUDE_PORT_RTOS_SEMAPHORE                      (1)
 // #define OS_INCLUDE_PORT_RTOS_MEMORY_POOL                    (1)
-#define OS_INCLUDE_PORT_RTOS_MESSAGE_QUEUE                  (1)
-#define OS_INCLUDE_PORT_RTOS_EVENT_FLAGS                    (1)
+// #define OS_INCLUDE_PORT_RTOS_MESSAGE_QUEUE                  (1)
+// #define OS_INCLUDE_PORT_RTOS_EVENT_FLAGS                    (1)
 
 // ----------------------------------------------------------------------------
 
