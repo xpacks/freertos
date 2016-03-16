@@ -95,15 +95,21 @@ namespace os
 #endif
 
         bool
-        empty (void);
+        empty (void) const;
 
         std::size_t
-        length ();
+        length (void) const;
+
+        void
+        clear(void);
 
         // TODO add iterator begin(), end()
 
 #endif
       protected:
+
+        void
+        _init(void);
 
         rtos::Thread* array_[OS_INTEGER_MAX_NUMBER_OF_THREADS];
         std::size_t count_;
@@ -126,13 +132,13 @@ namespace os
       // ----------------------------------------------------------------------
 
       inline bool
-      Tasks_list::empty (void)
+      Tasks_list::empty (void) const
       {
         return (count_ == 0);
       }
 
       inline std::size_t
-      Tasks_list::length ()
+      Tasks_list::length () const
       {
         return count_;
       }
