@@ -31,6 +31,7 @@
 
 #include <cmsis-plus/rtos/os-app-config.h>
 #include <cmsis-plus/rtos/port/os-c-decls.h>
+#include <cmsis-plus/rtos/os-lists.h>
 
 // ----------------------------------------------------------------------------
 
@@ -64,56 +65,7 @@ namespace os
         using element_t = long long;
       } /* namespace stack */
 
-      // Simple list of threads.
-      class Tasks_list
-      {
-      public:
-
-        Tasks_list ();
-        ~Tasks_list ();
-#if 1
-        void
-        add (rtos::Thread* thread);
-        void
-        remove (rtos::Thread* thread);
-        void
-        remove (std::size_t pos);
-
-        void
-        wakeup_one ();
-
-        void
-        wakeup_all ();
-
-#if 1
-        /**
-         * @brief Get top priority task.
-         * @return Pointer to task.
-         */
-        rtos::Thread*
-        _top_prio_task (void);
-#endif
-
-        bool
-        empty (void) const;
-
-        std::size_t
-        length (void) const;
-
-        void
-        clear(void);
-
-        // TODO add iterator begin(), end()
-
-#endif
-      protected:
-
-        void
-        _init(void);
-
-        rtos::Thread* array_[OS_INTEGER_MAX_NUMBER_OF_THREADS];
-        std::size_t count_;
-      };
+      using Waiting_threads_list = rtos::Waiting_threads_list;
 
     // ----------------------------------------------------------------------
 
@@ -129,19 +81,7 @@ namespace os
   {
     namespace port
     {
-      // ----------------------------------------------------------------------
-
-      inline bool
-      Tasks_list::empty (void) const
-      {
-        return (count_ == 0);
-      }
-
-      inline std::size_t
-      Tasks_list::length () const
-      {
-        return count_;
-      }
+    // ----------------------------------------------------------------------
 
     // ----------------------------------------------------------------------
 
