@@ -49,10 +49,10 @@ WWDG_IRQHandler (void)
 }
 
 void
-vApplicationStackOverflowHook(void* task, const char* name);
+vApplicationStackOverflowHook (void* task, const char* name);
 
 void
-vApplicationStackOverflowHook(void* task, const char* name)
+vApplicationStackOverflowHook (void* task, const char* name)
 {
-  printf(">>> Stack overflow %p '%s'!\n", task, name);
+  printf (">>> Stack overflow %p '%s'!\n", task, name);
 }
