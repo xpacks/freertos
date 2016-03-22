@@ -273,7 +273,7 @@ namespace os
 
         inline static void
         __attribute__((always_inline))
-        suspend (rtos::Thread* obj)
+        sleep (rtos::Thread* obj)
         {
           vTaskSuspend (obj->port_.handle);
         }
