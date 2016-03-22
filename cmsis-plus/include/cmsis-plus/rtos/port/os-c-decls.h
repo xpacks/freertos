@@ -32,43 +32,43 @@
 #ifndef CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_
 #define CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_
 
-#if defined(OS_INCLUDE_PORT_RTOS_THREAD)
+#if defined(OS_INCLUDE_RTOS_PORT_THREAD)
 
 typedef struct os_thread_port_data_s
   {
     void* handle;
   }os_thread_port_data_t;
 
-#endif /* OS_INCLUDE_PORT_RTOS_THREAD */
+#endif /* OS_INCLUDE_RTOS_PORT_THREAD */
 
-#if defined(OS_INCLUDE_PORT_RTOS_TIMER)
+#if defined(OS_INCLUDE_RTOS_PORT_TIMER)
 
 typedef struct os_timer_port_data_s
   {
     void* handle;
   }os_timer_port_data_t;
 
-#endif /* OS_INCLUDE_PORT_RTOS_TIMER */
+#endif /* OS_INCLUDE_RTOS_PORT_TIMER */
 
-#if defined(OS_INCLUDE_PORT_RTOS_MUTEX)
+#if defined(OS_INCLUDE_RTOS_PORT_MUTEX)
 
 typedef struct os_mutex_port_data_s
   {
     void* handle;
   }os_mutex_port_data_t;
 
-#endif /* OS_INCLUDE_PORT_RTOS_MUTEX */
+#endif /* OS_INCLUDE_RTOS_PORT_MUTEX */
 
-#if defined(OS_INCLUDE_PORT_RTOS_CONDITION_VARIABLE)
+#if defined(OS_INCLUDE_RTOS_PORT_CONDITION_VARIABLE)
 
 typedef struct os_condvar_port_data_s
   {
     void* handle;
   }os_condvar_port_data_t;
 
-#endif /* OS_INCLUDE_PORT_RTOS_CONDITION_VARIABLE */
+#endif /* OS_INCLUDE_RTOS_PORT_CONDITION_VARIABLE */
 
-#if defined(OS_INCLUDE_PORT_RTOS_SEMAPHORE)
+#if defined(OS_INCLUDE_RTOS_PORT_SEMAPHORE)
 
 typedef struct os_semaphore_port_data_s
   {
@@ -77,31 +77,31 @@ typedef struct os_semaphore_port_data_s
 
 #endif
 
-#if defined(OS_INCLUDE_PORT_RTOS_MEMORY_POOL)
+#if defined(OS_INCLUDE_RTOS_PORT_MEMORY_POOL)
 
 typedef struct os_mempool_port_data_s
   {
     void* handle;
   }os_mempool_port_data_t;
 
-#endif /* OS_INCLUDE_PORT_RTOS_MEMORY_POOL */
+#endif /* OS_INCLUDE_RTOS_PORT_MEMORY_POOL */
 
-#if defined(OS_INCLUDE_PORT_RTOS_MESSAGE_QUEUE)
+#if defined(OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE)
 
 typedef struct os_mqueue_port_data_s
   {
     void* handle;
   }os_mqueue_port_data_t;
 
-#endif /* OS_INCLUDE_PORT_RTOS_MESSAGE_QUEUE */
+#endif /* OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE */
 
-#if defined(OS_INCLUDE_PORT_RTOS_EVENT_FLAGS)
+#if defined(OS_INCLUDE_RTOS_PORT_EVENT_FLAGS)
 
 typedef struct os_evflags_port_data_s
   {
     void* handle;
   }os_evflags_port_data_t;
 
-#endif /* OS_INCLUDE_PORT_RTOS_EVENT_FLAGS */
+#endif /* OS_INCLUDE_RTOS_PORT_EVENT_FLAGS */
 
 #endif /* CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_ */

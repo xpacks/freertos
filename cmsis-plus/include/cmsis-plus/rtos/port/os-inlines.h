@@ -147,7 +147,7 @@ namespace os
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_PORT_RTOS_THREAD)
+#if defined(OS_INCLUDE_RTOS_PORT_THREAD)
 
       namespace this_thread
       {
@@ -341,11 +341,11 @@ namespace os
         // --------------------------------------------------------------------
       };
 
-#endif /* OS_INCLUDE_PORT_RTOS_THREAD */
+#endif /* OS_INCLUDE_RTOS_PORT_THREAD */
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_PORT_RTOS_TIMER)
+#if defined(OS_INCLUDE_RTOS_PORT_TIMER)
 
       class Timer
       {
@@ -426,11 +426,11 @@ namespace os
         // --------------------------------------------------------------------
       };
 
-#endif /* OS_INCLUDE_PORT_RTOS_TIMER */
+#endif /* OS_INCLUDE_RTOS_PORT_TIMER */
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_PORT_RTOS_MUTEX)
+#if defined(OS_INCLUDE_RTOS_PORT_MUTEX)
 
       class Mutex
       {
@@ -602,11 +602,11 @@ namespace os
 
         // --------------------------------------------------------------------
       };
-#endif /* OS_INCLUDE_PORT_RTOS_MUTEX */
+#endif /* OS_INCLUDE_RTOS_PORT_MUTEX */
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_PORT_RTOS_CONDITION_VARIABLE)
+#if defined(OS_INCLUDE_RTOS_PORT_CONDITION_VARIABLE)
 
       class Condition_variable
         {
@@ -614,11 +614,11 @@ namespace os
 
         };
 
-#endif /* OS_INCLUDE_PORT_RTOS_CONDITION_VARIABLE */
+#endif /* OS_INCLUDE_RTOS_PORT_CONDITION_VARIABLE */
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_PORT_RTOS_SEMAPHORE)
+#if defined(OS_INCLUDE_RTOS_PORT_SEMAPHORE)
 
       class Semaphore
       {
@@ -748,11 +748,11 @@ namespace os
         // --------------------------------------------------------------------
       };
 
-#endif /* OS_INCLUDE_PORT_RTOS_SEMAPHORE */
+#endif /* OS_INCLUDE_RTOS_PORT_SEMAPHORE */
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_PORT_RTOS_MEMORY_POOL)
+#if defined(OS_INCLUDE_RTOS_PORT_MEMORY_POOL)
 
       class Memory_pool
         {
@@ -760,11 +760,11 @@ namespace os
 
         };
 
-#endif /* OS_INCLUDE_PORT_RTOS_MEMORY_POOL */
+#endif /* OS_INCLUDE_RTOS_PORT_MEMORY_POOL */
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_PORT_RTOS_MESSAGE_QUEUE)
+#if defined(OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE)
 
       class Message_queue
       {
@@ -926,11 +926,11 @@ namespace os
         // --------------------------------------------------------------------
       };
 
-#endif /* OS_INCLUDE_PORT_RTOS_MESSAGE_QUEUE */
+#endif /* OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE */
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_PORT_RTOS_EVENT_FLAGS)
+#if defined(OS_INCLUDE_RTOS_PORT_EVENT_FLAGS)
 
       class Event_flags
       {
@@ -1162,7 +1162,7 @@ namespace os
         // --------------------------------------------------------------------
       };
 
-#endif /* OS_INCLUDE_PORT_RTOS_EVENT_FLAGS */
+#endif /* OS_INCLUDE_RTOS_PORT_EVENT_FLAGS */
 
     // ======================================================================
 

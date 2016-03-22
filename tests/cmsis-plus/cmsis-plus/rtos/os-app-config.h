@@ -47,15 +47,15 @@ typedef struct os_thread_user_storage_s
 // ----------------------------------------------------------------------------
 
 // Request the inclusion of custom implementations.
-#define OS_INCLUDE_PORT_RTOS_SYSTICK_CLOCK_SLEEP_FOR        (1)
-#define OS_INCLUDE_PORT_RTOS_THREAD                         (1)
-#define OS_INCLUDE_PORT_RTOS_TIMER                          (1)
-#define OS_INCLUDE_PORT_RTOS_MUTEX                          (1)
-// #define OS_INCLUDE_PORT_RTOS_CONDITION_VARIABLE             (1)
-#define OS_INCLUDE_PORT_RTOS_SEMAPHORE                      (1)
-// #define OS_INCLUDE_PORT_RTOS_MEMORY_POOL                    (1)
-#define OS_INCLUDE_PORT_RTOS_MESSAGE_QUEUE                  (1)
-#define OS_INCLUDE_PORT_RTOS_EVENT_FLAGS                    (1)
+#define OS_INCLUDE_RTOS_PORT_SYSTICK_CLOCK_SLEEP_FOR        (1)
+#define OS_INCLUDE_RTOS_PORT_THREAD                         (1)
+#define OS_INCLUDE_RTOS_PORT_TIMER                          (1)
+#define OS_INCLUDE_RTOS_PORT_MUTEX                          (1)
+// #define OS_INCLUDE_RTOS_PORT_CONDITION_VARIABLE             (1)
+#define OS_INCLUDE_RTOS_PORT_SEMAPHORE                      (1)
+// #define OS_INCLUDE_RTOS_PORT_MEMORY_POOL                    (1)
+#define OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE                  (1)
+#define OS_INCLUDE_RTOS_PORT_EVENT_FLAGS                    (1)
 
 // ----------------------------------------------------------------------------
 
