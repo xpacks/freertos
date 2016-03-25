@@ -110,7 +110,7 @@ namespace os
             // TODO: on M0 & M0+ cores there is no BASEPRI
             uint32_t pri = __get_BASEPRI ();
             __set_BASEPRI_MAX (
-                OS_INTEGER_CRITICAL_SECTION_INTERRUPT_PRIORITY
+                OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY
                     << ((8 - __NVIC_PRIO_BITS)));
             return pri;
           }
@@ -131,7 +131,7 @@ namespace os
 
         inline static result_t
         __attribute__((always_inline))
-        wait (duration_t ticks)
+        wait (clock::duration_t ticks)
         {
 #if 0
           duration_t t = ticks / 10;
@@ -282,9 +282,17 @@ namespace os
         __attribute__((always_inline))
         wakeup (rtos::Thread* obj)
         {
-          vTaskResume (obj->port_.handle);
-          // trace_putchar('^');
-          taskYIELD();
+          if (rtos::scheduler::in_handler_mode ())
+            {
+              BaseType_t must_yield = xTaskResumeFromISR (obj->port_.handle);
+              portEND_SWITCHING_ISR(must_yield);
+            }
+          else
+            {
+              vTaskResume (obj->port_.handle);
+              // trace_putchar('^');
+              taskYIELD();
+            }
         }
 
         inline static thread::priority_t
@@ -323,7 +331,7 @@ namespace os
                   {
                     break;
                   }
-                //Systick_clock::sleep_for (1);
+                //systick_clock.sleep_for (1);
                 xEventGroupWaitBits (obj->port_.event_flags, 1, pdTRUE, pdFALSE,
                     portMAX_DELAY);
               }
@@ -379,7 +387,7 @@ namespace os
 
         inline static result_t
         __attribute__((always_inline))
-        start (rtos::Timer* obj, systicks_t ticks)
+        start (rtos::Timer* obj, clock::systicks_t ticks)
         {
           if (xTimerIsTimerActive (obj->port_.handle) != pdFALSE)
             {
@@ -428,736 +436,736 @@ namespace os
 
 #endif /* OS_INCLUDE_RTOS_PORT_TIMER */
 
-      // ======================================================================
+    // ======================================================================
 
 #if defined(OS_INCLUDE_RTOS_PORT_MUTEX)
 
-      class Mutex
+    class Mutex
       {
       public:
 
         inline static void
         __attribute__((always_inline))
         create (rtos::Mutex* obj)
-        {
-          if (obj->type_ == mutex::type::recursive)
-            {
-              obj->port_.handle = xSemaphoreCreateRecursiveMutex ();
-            }
-          else
-            {
-              obj->port_.handle = xSemaphoreCreateMutex ();
-            }
-        }
+          {
+            if (obj->type_ == mutex::type::recursive)
+              {
+                obj->port_.handle = xSemaphoreCreateRecursiveMutex ();
+              }
+            else
+              {
+                obj->port_.handle = xSemaphoreCreateMutex ();
+              }
+          }
 
         inline static void
         __attribute__((always_inline))
         destroy (rtos::Mutex* obj)
-        {
-          vSemaphoreDelete(obj->port_.handle);
-        }
+          {
+            vSemaphoreDelete(obj->port_.handle);
+          }
 
         inline static result_t
         __attribute__((always_inline))
         lock (rtos::Mutex* obj)
-        {
-          BaseType_t res;
+          {
+            BaseType_t res;
 
-          if (obj->type_ == mutex::type::recursive)
-            {
-              res = xSemaphoreTakeRecursive(obj->port_.handle, portMAX_DELAY);
-            }
-          else
-            {
-              res = xSemaphoreTake(obj->port_.handle, portMAX_DELAY);
-            }
+            if (obj->type_ == mutex::type::recursive)
+              {
+                res = xSemaphoreTakeRecursive(obj->port_.handle, portMAX_DELAY);
+              }
+            else
+              {
+                res = xSemaphoreTake(obj->port_.handle, portMAX_DELAY);
+              }
 
-          if (res != pdTRUE)
-            {
-              return ENOTRECOVERABLE;
-            }
+            if (res != pdTRUE)
+              {
+                return ENOTRECOVERABLE;
+              }
 
-          obj->owner_ = &rtos::this_thread::thread ();
-          ++obj->count_;
-          return result::ok;
-        }
+            obj->owner_ = &rtos::this_thread::thread ();
+            ++obj->count_;
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         try_lock (rtos::Mutex* obj)
-        {
-          BaseType_t res;
+          {
+            BaseType_t res;
 
-          if (obj->type_ == mutex::type::recursive)
-            {
-              res = xSemaphoreTakeRecursive(obj->port_.handle, 0);
-            }
-          else
-            {
-              res = xSemaphoreTake(obj->port_.handle, 0);
-            }
+            if (obj->type_ == mutex::type::recursive)
+              {
+                res = xSemaphoreTakeRecursive(obj->port_.handle, 0);
+              }
+            else
+              {
+                res = xSemaphoreTake(obj->port_.handle, 0);
+              }
 
-          if (res != pdTRUE)
-            {
-              return EAGAIN;
-            }
+            if (res != pdTRUE)
+              {
+                return EAGAIN;
+              }
 
-          obj->owner_ = &rtos::this_thread::thread ();
-          ++obj->count_;
-          return result::ok;
-        }
+            obj->owner_ = &rtos::this_thread::thread ();
+            ++obj->count_;
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         timed_lock (rtos::Mutex* obj, systicks_t ticks)
-        {
-          BaseType_t res;
+          {
+            BaseType_t res;
 
-          if (obj->type_ == mutex::type::recursive)
-            {
-              res = xSemaphoreTakeRecursive(obj->port_.handle, ticks);
-            }
-          else
-            {
-              res = xSemaphoreTake(obj->port_.handle, ticks);
-            }
+            if (obj->type_ == mutex::type::recursive)
+              {
+                res = xSemaphoreTakeRecursive(obj->port_.handle, ticks);
+              }
+            else
+              {
+                res = xSemaphoreTake(obj->port_.handle, ticks);
+              }
 
-          if (res != pdTRUE)
-            {
-              return ETIMEDOUT;
-            }
+            if (res != pdTRUE)
+              {
+                return ETIMEDOUT;
+              }
 
-          obj->owner_ = &rtos::this_thread::thread ();
-          ++obj->count_;
-          return result::ok;
-        }
+            obj->owner_ = &rtos::this_thread::thread ();
+            ++obj->count_;
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         unlock (rtos::Mutex* obj)
-        {
-          BaseType_t res;
+          {
+            BaseType_t res;
 
-          if (obj->owner_ != &rtos::this_thread::thread ())
-            {
-              return EPERM;
-            }
+            if (obj->owner_ != &rtos::this_thread::thread ())
+              {
+                return EPERM;
+              }
 
-          if (obj->type_ == mutex::type::recursive)
-            {
-              res = xSemaphoreGiveRecursive(obj->port_.handle);
-            }
-          else
-            {
-              res = xSemaphoreGive(obj->port_.handle);
-            }
+            if (obj->type_ == mutex::type::recursive)
+              {
+                res = xSemaphoreGiveRecursive(obj->port_.handle);
+              }
+            else
+              {
+                res = xSemaphoreGive(obj->port_.handle);
+              }
 
-          if (res != pdTRUE)
-            {
-              return ENOTRECOVERABLE;
-            }
+            if (res != pdTRUE)
+              {
+                return ENOTRECOVERABLE;
+              }
 
-          --obj->count_;
-          if (obj->count_ == 0)
-            {
-              obj->owner_ = nullptr;
-            }
+            --obj->count_;
+            if (obj->count_ == 0)
+              {
+                obj->owner_ = nullptr;
+              }
 
-          return result::ok;
-        }
+            return result::ok;
+          }
 
         inline static thread::priority_t
         __attribute__((always_inline))
         prio_ceiling (const rtos::Mutex* obj)
-        {
-          return obj->prio_ceiling_;
-        }
+          {
+            return obj->prio_ceiling_;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         prio_ceiling (rtos::Mutex* obj, thread::priority_t prio_ceiling,
-                      thread::priority_t* old_prio_ceiling)
-        {
-          thread::priority_t prio;
-            {
-              // TODO: lock() must not adhere to the priority protocol.
-              obj->lock ();
-              prio = obj->prio_ceiling_;
-              obj->prio_ceiling_ = prio_ceiling;
-              obj->unlock ();
-            }
+            thread::priority_t* old_prio_ceiling)
+          {
+            thread::priority_t prio;
+              {
+                // TODO: lock() must not adhere to the priority protocol.
+                obj->lock ();
+                prio = obj->prio_ceiling_;
+                obj->prio_ceiling_ = prio_ceiling;
+                obj->unlock ();
+              }
 
-          if (old_prio_ceiling != nullptr)
-            {
-              *old_prio_ceiling = prio;
-            }
-          return result::ok;
-        }
+            if (old_prio_ceiling != nullptr)
+              {
+                *old_prio_ceiling = prio;
+              }
+            return result::ok;
+          }
 
         inline static result_t
         consistent (rtos::Mutex* obj __attribute__((unused)))
-        {
-          return result::ok;
-        }
+          {
+            return result::ok;
+          }
 
         // --------------------------------------------------------------------
       };
 #endif /* OS_INCLUDE_RTOS_PORT_MUTEX */
 
-      // ======================================================================
+    // ======================================================================
 
 #if defined(OS_INCLUDE_RTOS_PORT_CONDITION_VARIABLE)
 
-      class Condition_variable
-        {
-        public:
+    class Condition_variable
+      {
+      public:
 
-        };
+      };
 
 #endif /* OS_INCLUDE_RTOS_PORT_CONDITION_VARIABLE */
 
-      // ======================================================================
+    // ======================================================================
 
 #if defined(OS_INCLUDE_RTOS_PORT_SEMAPHORE)
 
-      class Semaphore
+    class Semaphore
       {
       public:
 
         inline static void
         __attribute__((always_inline))
         create (rtos::Semaphore* obj)
-        {
-          semaphore::count_t max = obj->max_count_;
-          if (max == 0)
-            {
-              max = 1;
-            }
-          obj->port_.handle = xSemaphoreCreateCounting(max,
-                                                       obj->initial_count_);
-        }
+          {
+            semaphore::count_t max = obj->max_count_;
+            if (max == 0)
+              {
+                max = 1;
+              }
+            obj->port_.handle = xSemaphoreCreateCounting(max,
+                obj->initial_count_);
+          }
 
         inline static void
         __attribute__((always_inline))
         destroy (rtos::Semaphore* obj)
-        {
-          vSemaphoreDelete(obj->port_.handle);
-        }
+          {
+            vSemaphoreDelete(obj->port_.handle);
+          }
 
         inline static result_t
         __attribute__((always_inline))
         post (rtos::Semaphore* obj)
-        {
+          {
 #if 0
-          if (obj->count_ >= obj->max_count_)
-            {
-              return EOVERFLOW;
-            }
+            if (obj->count_ >= obj->max_count_)
+              {
+                return EOVERFLOW;
+              }
 #endif
-          portBASE_TYPE thread_woken = pdFALSE;
+            portBASE_TYPE thread_woken = pdFALSE;
 
-          if (rtos::scheduler::in_handler_mode ())
-            {
-              if (xSemaphoreGiveFromISR(obj->port_.handle,
-                  &thread_woken) != pdTRUE)
-                {
-                  return EOVERFLOW;
-                }
-              portEND_SWITCHING_ISR(thread_woken);
-            }
-          else
-            {
-              if (xSemaphoreGive (obj->port_.handle) != pdTRUE)
-                {
-                  return EOVERFLOW;
-                }
-            }
-          ++(obj->count_);
+            if (rtos::scheduler::in_handler_mode ())
+              {
+                if (xSemaphoreGiveFromISR(obj->port_.handle,
+                        &thread_woken) != pdTRUE)
+                  {
+                    return EOVERFLOW;
+                  }
+                portEND_SWITCHING_ISR(thread_woken);
+              }
+            else
+              {
+                if (xSemaphoreGive (obj->port_.handle) != pdTRUE)
+                  {
+                    return EOVERFLOW;
+                  }
+              }
+            ++(obj->count_);
 
-          return result::ok;
-        }
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         wait (rtos::Semaphore* obj)
-        {
-          if (xSemaphoreTake (obj->port_.handle, portMAX_DELAY) != pdTRUE)
-            {
-              return ENOTRECOVERABLE;
-            }
-          --(obj->count_);
+          {
+            if (xSemaphoreTake (obj->port_.handle, portMAX_DELAY) != pdTRUE)
+              {
+                return ENOTRECOVERABLE;
+              }
+            --(obj->count_);
 
-          return result::ok;
-        }
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         try_wait (rtos::Semaphore* obj)
-        {
-          portBASE_TYPE thread_woken = pdFALSE;
+          {
+            portBASE_TYPE thread_woken = pdFALSE;
 
-          if (rtos::scheduler::in_handler_mode ())
-            {
-              if (xSemaphoreTakeFromISR(obj->port_.handle,
-                  &thread_woken) != pdTRUE)
-                {
-                  return EAGAIN;
-                }
-              portEND_SWITCHING_ISR(thread_woken);
-            }
-          else if (xSemaphoreTake (obj->port_.handle, 0) != pdTRUE)
-            {
-              return EAGAIN;
-            }
+            if (rtos::scheduler::in_handler_mode ())
+              {
+                if (xSemaphoreTakeFromISR(obj->port_.handle,
+                        &thread_woken) != pdTRUE)
+                  {
+                    return EAGAIN;
+                  }
+                portEND_SWITCHING_ISR(thread_woken);
+              }
+            else if (xSemaphoreTake (obj->port_.handle, 0) != pdTRUE)
+              {
+                return EAGAIN;
+              }
 
-          --(obj->count_);
-          return result::ok;
-        }
+            --(obj->count_);
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         timed_wait (rtos::Semaphore* obj, systicks_t ticks)
-        {
-          if (xSemaphoreTake(obj->port_.handle,
-              ticks > 0 ? ticks : 1) != pdTRUE)
-            {
-              return ETIMEDOUT;
-            }
+          {
+            if (xSemaphoreTake(obj->port_.handle,
+                    ticks > 0 ? ticks : 1) != pdTRUE)
+              {
+                return ETIMEDOUT;
+              }
 
-          --(obj->count_);
-          return result::ok;
-        }
+            --(obj->count_);
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         reset (rtos::Semaphore* obj)
-        {
-          if (obj->count_ < 0)
-            {
-              // There are waiting tasks
-              return EAGAIN;
-            }
+          {
+            if (obj->count_ < 0)
+              {
+                // There are waiting tasks
+                return EAGAIN;
+              }
 
-          // TODO: Check if this properly resets a semaphore.
-          xQueueReset(obj->port_.handle);
+            // TODO: Check if this properly resets a semaphore.
+            xQueueReset(obj->port_.handle);
 
-          obj->count_ = obj->initial_count_;
-          return result::ok;
-        }
+            obj->count_ = obj->initial_count_;
+            return result::ok;
+          }
 
         // --------------------------------------------------------------------
       };
 
 #endif /* OS_INCLUDE_RTOS_PORT_SEMAPHORE */
 
-      // ======================================================================
+    // ======================================================================
 
 #if defined(OS_INCLUDE_RTOS_PORT_MEMORY_POOL)
 
-      class Memory_pool
-        {
-        public:
+    class Memory_pool
+      {
+      public:
 
-        };
+      };
 
 #endif /* OS_INCLUDE_RTOS_PORT_MEMORY_POOL */
 
-      // ======================================================================
+    // ======================================================================
 
 #if defined(OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE)
 
-      class Message_queue
+    class Message_queue
       {
       public:
 
         inline static void
         __attribute__((always_inline))
         create (rtos::Message_queue* obj)
-        {
-          obj->port_.handle = xQueueCreate(obj->msgs_, obj->msg_size_bytes_);
-        }
+          {
+            obj->port_.handle = xQueueCreate(obj->msgs_, obj->msg_size_bytes_);
+          }
 
         inline static void
         __attribute__((always_inline))
         destroy (rtos::Message_queue* obj)
-        {
-          vQueueDelete (obj->port_.handle);
-        }
+          {
+            vQueueDelete (obj->port_.handle);
+          }
 
         inline static result_t
         __attribute__((always_inline))
         send (rtos::Message_queue* obj, const char* msg,
-              std::size_t nbytes __attribute__((unused)),
-              mqueue::priority_t mprio __attribute__((unused)))
-        {
-          // FreeRTOS will store the full message, regardless of the nbytes.
-          BaseType_t res = xQueueSend(obj->port_.handle, msg, portMAX_DELAY);
+            std::size_t nbytes __attribute__((unused)),
+            mqueue::priority_t mprio __attribute__((unused)))
+          {
+            // FreeRTOS will store the full message, regardless of the nbytes.
+            BaseType_t res = xQueueSend(obj->port_.handle, msg, portMAX_DELAY);
 
-          if (res != pdTRUE)
-            {
-              return ENOTRECOVERABLE;
-            }
+            if (res != pdTRUE)
+              {
+                return ENOTRECOVERABLE;
+              }
 
-          ++(obj->count_);
-          return result::ok;
-        }
+            ++(obj->count_);
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         try_send (rtos::Message_queue* obj, const char* msg,
-                  std::size_t nbytes __attribute__((unused)),
-                  mqueue::priority_t mprio __attribute__((unused)))
-        {
-          portBASE_TYPE thread_woken = pdFALSE;
+            std::size_t nbytes __attribute__((unused)),
+            mqueue::priority_t mprio __attribute__((unused)))
+          {
+            portBASE_TYPE thread_woken = pdFALSE;
 
-          if (rtos::scheduler::in_handler_mode ())
-            {
-              if (xQueueSendFromISR(obj->port_.handle, msg,
-                  &thread_woken) != pdTRUE)
-                {
-                  return EAGAIN;
-                }
-              portEND_SWITCHING_ISR(thread_woken);
-            }
-          else
-            {
-              if (xQueueSend (obj->port_.handle, msg, 0) != pdTRUE)
-                {
-                  return EAGAIN;
-                }
-            }
+            if (rtos::scheduler::in_handler_mode ())
+              {
+                if (xQueueSendFromISR(obj->port_.handle, msg,
+                        &thread_woken) != pdTRUE)
+                  {
+                    return EAGAIN;
+                  }
+                portEND_SWITCHING_ISR(thread_woken);
+              }
+            else
+              {
+                if (xQueueSend (obj->port_.handle, msg, 0) != pdTRUE)
+                  {
+                    return EAGAIN;
+                  }
+              }
 
-          ++(obj->count_);
-          return result::ok;
-        }
+            ++(obj->count_);
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         timed_send (rtos::Message_queue* obj, const char* msg,
-                    std::size_t nbytes __attribute__((unused)),
-                    mqueue::priority_t mprio __attribute__((unused)),
-                    systicks_t ticks)
-        {
-          // FreeRTOS will store the full message, regardless of the nbytes.
-          BaseType_t res = xQueueSend(obj->port_.handle, msg, ticks);
+            std::size_t nbytes __attribute__((unused)),
+            mqueue::priority_t mprio __attribute__((unused)),
+            systicks_t ticks)
+          {
+            // FreeRTOS will store the full message, regardless of the nbytes.
+            BaseType_t res = xQueueSend(obj->port_.handle, msg, ticks);
 
-          if (res != pdTRUE)
-            {
-              return ETIMEDOUT;
-            }
+            if (res != pdTRUE)
+              {
+                return ETIMEDOUT;
+              }
 
-          ++(obj->count_);
-          return result::ok;
-        }
+            ++(obj->count_);
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         receive (rtos::Message_queue* obj, char* msg,
-                 std::size_t nbytes __attribute__((unused)),
-                 mqueue::priority_t* mprio __attribute__((unused)))
-        {
-          BaseType_t res = xQueueReceive(obj->port_.handle, msg, portMAX_DELAY);
-          if (res != pdTRUE)
-            {
-              return ENOTRECOVERABLE;
-            }
+            std::size_t nbytes __attribute__((unused)),
+            mqueue::priority_t* mprio __attribute__((unused)))
+          {
+            BaseType_t res = xQueueReceive(obj->port_.handle, msg, portMAX_DELAY);
+            if (res != pdTRUE)
+              {
+                return ENOTRECOVERABLE;
+              }
 
-          --(obj->count_);
-          return result::ok;
-        }
+            --(obj->count_);
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         try_receive (rtos::Message_queue* obj, char* msg,
-                     std::size_t nbytes __attribute__((unused)),
-                     mqueue::priority_t* mprio __attribute__((unused)))
-        {
-          portBASE_TYPE thread_woken = pdFALSE;
+            std::size_t nbytes __attribute__((unused)),
+            mqueue::priority_t* mprio __attribute__((unused)))
+          {
+            portBASE_TYPE thread_woken = pdFALSE;
 
-          if (rtos::scheduler::in_handler_mode ())
-            {
-              if (xQueueReceiveFromISR (obj->port_.handle, msg,
-                                        &thread_woken) != pdTRUE)
-                {
-                  return EAGAIN;
-                }
-              portEND_SWITCHING_ISR(thread_woken);
-            }
-          else
-            {
-              if (xQueueReceive (obj->port_.handle, msg, 0) != pdTRUE)
-                {
-                  return EAGAIN;
-                }
-            }
+            if (rtos::scheduler::in_handler_mode ())
+              {
+                if (xQueueReceiveFromISR (obj->port_.handle, msg,
+                        &thread_woken) != pdTRUE)
+                  {
+                    return EAGAIN;
+                  }
+                portEND_SWITCHING_ISR(thread_woken);
+              }
+            else
+              {
+                if (xQueueReceive (obj->port_.handle, msg, 0) != pdTRUE)
+                  {
+                    return EAGAIN;
+                  }
+              }
 
-          --(obj->count_);
-          return result::ok;
+            --(obj->count_);
+            return result::ok;
 
-        }
+          }
 
         inline static result_t
         __attribute__((always_inline))
         timed_receive (rtos::Message_queue* obj, char* msg,
-                       std::size_t nbytes __attribute__((unused)),
-                       mqueue::priority_t* mprio __attribute__((unused)),
-                       systicks_t ticks)
-        {
-          BaseType_t res = xQueueReceive(obj->port_.handle, msg, ticks);
-          if (res != pdTRUE)
-            {
-              return ETIMEDOUT;
-            }
+            std::size_t nbytes __attribute__((unused)),
+            mqueue::priority_t* mprio __attribute__((unused)),
+            systicks_t ticks)
+          {
+            BaseType_t res = xQueueReceive(obj->port_.handle, msg, ticks);
+            if (res != pdTRUE)
+              {
+                return ETIMEDOUT;
+              }
 
-          --(obj->count_);
-          return result::ok;
-        }
+            --(obj->count_);
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         reset (rtos::Message_queue* obj)
-        {
-          xQueueReset(obj->port_.handle);
+          {
+            xQueueReset(obj->port_.handle);
 
-          obj->count_ = 0;
-          return result::ok;
-        }
+            obj->count_ = 0;
+            return result::ok;
+          }
 
         // --------------------------------------------------------------------
       };
 
 #endif /* OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE */
 
-      // ======================================================================
+    // ======================================================================
 
 #if defined(OS_INCLUDE_RTOS_PORT_EVENT_FLAGS)
 
-      class Event_flags
+    class Event_flags
       {
       public:
 
         inline static void
         __attribute__((always_inline))
         create (rtos::Event_flags* obj)
-        {
-          obj->port_.handle = xEventGroupCreate ();
-        }
+          {
+            obj->port_.handle = xEventGroupCreate ();
+          }
 
         inline static void
         __attribute__((always_inline))
         destroy (rtos::Event_flags* obj)
-        {
-          vEventGroupDelete (obj->port_.handle);
-        }
+          {
+            vEventGroupDelete (obj->port_.handle);
+          }
 
         inline static result_t
         __attribute__((always_inline))
         wait (rtos::Event_flags* obj, flags::mask_t mask, flags::mask_t* oflags,
-              flags::mode_t mode)
-        {
-          EventBits_t bits;
+            flags::mode_t mode)
+          {
+            EventBits_t bits;
 
-          if (mask != 0)
-            {
-              bits = xEventGroupWaitBits (
-                  obj->port_.handle, mask,
-                  ((mode & flags::mode::clear) != 0) ? pdTRUE : pdFALSE,
-                  ((mode & flags::mode::all) != 0) ? pdTRUE : pdFALSE,
-                  portMAX_DELAY);
-            }
-          else
-            {
-              bits = xEventGroupWaitBits (obj->port_.handle, (0 - 1),
-              pdTRUE,
-                                          pdFALSE, portMAX_DELAY);
-            }
-          if (oflags != nullptr)
-            {
-              *oflags = bits;
-            }
-          return result::ok;
-        }
+            if (mask != 0)
+              {
+                bits = xEventGroupWaitBits (
+                    obj->port_.handle, mask,
+                    ((mode & flags::mode::clear) != 0) ? pdTRUE : pdFALSE,
+                    ((mode & flags::mode::all) != 0) ? pdTRUE : pdFALSE,
+                    portMAX_DELAY);
+              }
+            else
+              {
+                bits = xEventGroupWaitBits (obj->port_.handle, (0 - 1),
+                    pdTRUE,
+                    pdFALSE, portMAX_DELAY);
+              }
+            if (oflags != nullptr)
+              {
+                *oflags = bits;
+              }
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         try_wait (rtos::Event_flags* obj, flags::mask_t mask,
-                  flags::mask_t* oflags, flags::mode_t mode)
-        {
-          EventBits_t bits;
-          if (rtos::scheduler::in_handler_mode ())
-            {
-              bits = xEventGroupGetBitsFromISR (obj->port_.handle);
-            }
-          else
-            {
-              bits = xEventGroupGetBits(obj->port_.handle);
-            }
+            flags::mask_t* oflags, flags::mode_t mode)
+          {
+            EventBits_t bits;
+            if (rtos::scheduler::in_handler_mode ())
+              {
+                bits = xEventGroupGetBitsFromISR (obj->port_.handle);
+              }
+            else
+              {
+                bits = xEventGroupGetBits(obj->port_.handle);
+              }
 
-          if ((mask != 0) && ((mode & flags::mode::all) != 0))
-            {
-              // Only if all desires signals are raised we're done.
-              if ((bits & mask) == mask)
-                {
-                  if (oflags != nullptr)
-                    {
-                      *oflags = bits;
-                    }
-                  // Clear desired signals.
-                  bits &= ~mask;
-                  return result::ok;
-                }
-            }
-          else if ((mask == 0) || ((mode & flags::mode::any) != 0))
-            {
-              // Any flag will do it.
-              if (bits != 0)
-                {
-                  // Possibly return.
-                  if (oflags != nullptr)
-                    {
-                      *oflags = bits;
-                    }
-                  // Since we returned them all, also clear them all.
-                  bits = 0;
-                  return result::ok;
-                }
-            }
+            if ((mask != 0) && ((mode & flags::mode::all) != 0))
+              {
+                // Only if all desires signals are raised we're done.
+                if ((bits & mask) == mask)
+                  {
+                    if (oflags != nullptr)
+                      {
+                        *oflags = bits;
+                      }
+                    // Clear desired signals.
+                    bits &= ~mask;
+                    return result::ok;
+                  }
+              }
+            else if ((mask == 0) || ((mode & flags::mode::any) != 0))
+              {
+                // Any flag will do it.
+                if (bits != 0)
+                  {
+                    // Possibly return.
+                    if (oflags != nullptr)
+                      {
+                        *oflags = bits;
+                      }
+                    // Since we returned them all, also clear them all.
+                    bits = 0;
+                    return result::ok;
+                  }
+              }
 
-          return EAGAIN;
-        }
+            return EAGAIN;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         timed_wait (rtos::Event_flags* obj, flags::mask_t mask,
-                    systicks_t ticks, flags::mask_t* oflags, flags::mode_t mode)
-        {
-          EventBits_t bits;
+            systicks_t ticks, flags::mask_t* oflags, flags::mode_t mode)
+          {
+            EventBits_t bits;
 
-          if (mask != 0)
-            {
-              bits = xEventGroupWaitBits (
-                  obj->port_.handle, mask,
-                  ((mode & flags::mode::clear) != 0) ? pdTRUE : pdFALSE,
-                  ((mode & flags::mode::all) != 0) ? pdTRUE : pdFALSE, ticks);
-            }
-          else
-            {
-              bits = xEventGroupWaitBits (obj->port_.handle, (0 - 1),
-              pdTRUE,
-                                          pdFALSE, ticks);
-            }
+            if (mask != 0)
+              {
+                bits = xEventGroupWaitBits (
+                    obj->port_.handle, mask,
+                    ((mode & flags::mode::clear) != 0) ? pdTRUE : pdFALSE,
+                    ((mode & flags::mode::all) != 0) ? pdTRUE : pdFALSE, ticks);
+              }
+            else
+              {
+                bits = xEventGroupWaitBits (obj->port_.handle, (0 - 1),
+                    pdTRUE,
+                    pdFALSE, ticks);
+              }
 
-          if (oflags != nullptr)
-            {
-              *oflags = bits;
-            }
-          return result::ok;
-        }
+            if (oflags != nullptr)
+              {
+                *oflags = bits;
+              }
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         raise (rtos::Event_flags* obj, flags::mask_t mask,
-               flags::mask_t* oflags)
-        {
-          EventBits_t bits;
-          if (rtos::scheduler::in_handler_mode ())
-            {
-              portBASE_TYPE thread_woken = pdFALSE;
+            flags::mask_t* oflags)
+          {
+            EventBits_t bits;
+            if (rtos::scheduler::in_handler_mode ())
+              {
+                portBASE_TYPE thread_woken = pdFALSE;
 
-              if (xEventGroupSetBitsFromISR (obj->port_.handle, mask,
-                                             &thread_woken) == pdFAIL)
-                {
-                  return ENOTRECOVERABLE;
-                }
+                if (xEventGroupSetBitsFromISR (obj->port_.handle, mask,
+                        &thread_woken) == pdFAIL)
+                  {
+                    return ENOTRECOVERABLE;
+                  }
 
-              bits = xEventGroupGetBitsFromISR (obj->port_.handle);
-              portEND_SWITCHING_ISR(thread_woken);
-            }
-          else
-            {
-              bits = xEventGroupSetBits (obj->port_.handle, mask);
-            }
+                bits = xEventGroupGetBitsFromISR (obj->port_.handle);
+                portEND_SWITCHING_ISR(thread_woken);
+              }
+            else
+              {
+                bits = xEventGroupSetBits (obj->port_.handle, mask);
+              }
 
-          if (oflags != nullptr)
-            {
-              *oflags = bits;
-            }
+            if (oflags != nullptr)
+              {
+                *oflags = bits;
+              }
 
-          return result::ok;
-        }
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         clear (rtos::Event_flags* obj, flags::mask_t mask,
-               flags::mask_t* oflags)
-        {
-          EventBits_t bits;
-          if (rtos::scheduler::in_handler_mode ())
-            {
-              bits = xEventGroupClearBitsFromISR (obj->port_.handle, mask);
-            }
-          else
-            {
-              bits = xEventGroupClearBits (obj->port_.handle, mask);
-            }
+            flags::mask_t* oflags)
+          {
+            EventBits_t bits;
+            if (rtos::scheduler::in_handler_mode ())
+              {
+                bits = xEventGroupClearBitsFromISR (obj->port_.handle, mask);
+              }
+            else
+              {
+                bits = xEventGroupClearBits (obj->port_.handle, mask);
+              }
 
-          if (oflags != nullptr)
-            {
-              *oflags = bits;
-            }
+            if (oflags != nullptr)
+              {
+                *oflags = bits;
+              }
 
-          return result::ok;
+            return result::ok;
 
-        }
+          }
 
         inline static flags::mask_t
         __attribute__((always_inline))
         get (rtos::Event_flags* obj, flags::mask_t mask, flags::mode_t mode)
-        {
-          EventBits_t bits;
-          flags::mask_t ret;
-          if (rtos::scheduler::in_handler_mode ())
-            {
-              bits = xEventGroupGetBitsFromISR (obj->port_.handle);
-              if (mask == 0)
-                {
-                  // Return the entire mask.
-                  return bits;
-                }
-              ret = bits & mask;
-              if ((mode & flags::mode::clear) != 0)
-                {
-                  // Clear the selected bits; leave the rest untouched.
-                  xEventGroupClearBitsFromISR (obj->port_.handle, ~mask);
-                }
-            }
-          else
-            {
-              bits = xEventGroupGetBits(obj->port_.handle);
-              if (mask == 0)
-                {
-                  // Return the entire mask.
-                  return bits;
-                }
-              ret = bits & mask;
-              if ((mode & flags::mode::clear) != 0)
-                {
-                  // Clear the selected bits; leave the rest untouched.
-                  xEventGroupClearBits (obj->port_.handle, ~mask);
-                }
-            }
+          {
+            EventBits_t bits;
+            flags::mask_t ret;
+            if (rtos::scheduler::in_handler_mode ())
+              {
+                bits = xEventGroupGetBitsFromISR (obj->port_.handle);
+                if (mask == 0)
+                  {
+                    // Return the entire mask.
+                    return bits;
+                  }
+                ret = bits & mask;
+                if ((mode & flags::mode::clear) != 0)
+                  {
+                    // Clear the selected bits; leave the rest untouched.
+                    xEventGroupClearBitsFromISR (obj->port_.handle, ~mask);
+                  }
+              }
+            else
+              {
+                bits = xEventGroupGetBits(obj->port_.handle);
+                if (mask == 0)
+                  {
+                    // Return the entire mask.
+                    return bits;
+                  }
+                ret = bits & mask;
+                if ((mode & flags::mode::clear) != 0)
+                  {
+                    // Clear the selected bits; leave the rest untouched.
+                    xEventGroupClearBits (obj->port_.handle, ~mask);
+                  }
+              }
 
-          // Return the selected bits.
-          return ret;
-        }
+            // Return the selected bits.
+            return ret;
+          }
 
         inline static bool
         __attribute__((always_inline))
         waiting (rtos::Event_flags* obj)
-        {
-          // This is a custom call added to FreeRTOS.
-          return xEventFlagsWaiting (obj->port_.handle);
-        }
+          {
+            // This is a custom call added to FreeRTOS.
+            return xEventFlagsWaiting (obj->port_.handle);
+          }
 
         // --------------------------------------------------------------------
       };
@@ -1166,8 +1174,9 @@ namespace os
 
     // ======================================================================
 
-    } /* namespace port */
-  } /* namespace rtos */
+  }
+/* namespace port */
+} /* namespace rtos */
 } /* namespace os */
 
 // ----------------------------------------------------------------------------
