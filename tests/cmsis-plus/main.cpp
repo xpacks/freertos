@@ -41,7 +41,7 @@ task (void* args __attribute__((unused)))
       Thread& t = this_thread::thread ();
       trace::printf ("%s %d\n", t.name (), count);
 
-      Systick_clock::sleep_for (Systick_clock::frequency_hz);
+      systick_clock.sleep_for (Systick_clock::frequency_hz);
     }
   return nullptr;
 }

@@ -29,13 +29,11 @@
 #define OS_INTEGER_SYSTICK_FREQUENCY_HZ                     (1000)
 
 #define OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES               (1024)
-#define OS_INTEGER_MAX_NUMBER_OF_THREADS                    (10)
-
 
 // With 4 bits NVIC, there are 16 levels, 0 = highest, 15 = lowest
 
 // Disable all interrupts from 15 to 4, keep 3-2-1 enabled
-#define OS_INTEGER_CRITICAL_SECTION_INTERRUPT_PRIORITY      (4)
+#define OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY (4)
 
 // ----------------------------------------------------------------------------
 
@@ -50,10 +48,10 @@ typedef struct os_thread_user_storage_s
 // ----------------------------------------------------------------------------
 
 // Request the inclusion of custom implementations.
-#define OS_INCLUDE_RTOS_PORT_SYSTICK_CLOCK_SLEEP_FOR        (1)
 #define OS_INCLUDE_RTOS_PORT_THREAD                         (1)
 #define OS_INCLUDE_RTOS_PORT_TIMER                          (1)
 #if 0
+#define OS_INCLUDE_RTOS_PORT_SYSTICK_CLOCK_SLEEP_FOR        (1)
 #define OS_INCLUDE_RTOS_PORT_MUTEX                          (1)
 // #define OS_INCLUDE_RTOS_PORT_CONDITION_VARIABLE             (1)
 #define OS_INCLUDE_RTOS_PORT_SEMAPHORE                      (1)
@@ -61,6 +59,8 @@ typedef struct os_thread_user_storage_s
 #define OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE                  (1)
 #define OS_INCLUDE_RTOS_PORT_EVENT_FLAGS                    (1)
 #endif
+
+#define OS_INCLUDE_RTOS_PORT_SYSTICK_CLOCK_SLEEP_FOR        (1)
 
 // ----------------------------------------------------------------------------
 

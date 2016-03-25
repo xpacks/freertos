@@ -31,7 +31,6 @@
 
 #include <cmsis-plus/rtos/os-app-config.h>
 #include <cmsis-plus/rtos/port/os-c-decls.h>
-#include <cmsis-plus/rtos/os-lists.h>
 
 // ----------------------------------------------------------------------------
 
@@ -45,6 +44,9 @@ namespace os
   namespace rtos
   {
     class Thread;
+    class Waiting_threads_list;
+    class Clock_threads_list;
+    class Waiting_threads_list3;
 
     namespace port
     {
@@ -66,6 +68,7 @@ namespace os
       } /* namespace stack */
 
       using Waiting_threads_list = rtos::Waiting_threads_list;
+      using Clock_threads_list = rtos::Clock_threads_list;
 
     // ----------------------------------------------------------------------
 
