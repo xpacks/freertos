@@ -387,7 +387,7 @@ namespace os
 
         inline static result_t
         __attribute__((always_inline))
-        start (rtos::Timer* obj, clock::systicks_t ticks)
+        start (rtos::Timer* obj, clock::duration_t ticks)
         {
           if (xTimerIsTimerActive (obj->port_.handle) != pdFALSE)
             {
@@ -517,7 +517,7 @@ namespace os
 
         inline static result_t
         __attribute__((always_inline))
-        timed_lock (rtos::Mutex* obj, systicks_t ticks)
+        timed_lock (rtos::Mutex* obj, clock::duration_t ticks)
           {
             BaseType_t res;
 
@@ -724,7 +724,7 @@ namespace os
 
         inline static result_t
         __attribute__((always_inline))
-        timed_wait (rtos::Semaphore* obj, systicks_t ticks)
+        timed_wait (rtos::Semaphore* obj, clock::duration_t ticks)
           {
             if (xSemaphoreTake(obj->port_.handle,
                     ticks > 0 ? ticks : 1) != pdTRUE)
@@ -844,7 +844,7 @@ namespace os
         timed_send (rtos::Message_queue* obj, const char* msg,
             std::size_t nbytes __attribute__((unused)),
             mqueue::priority_t mprio __attribute__((unused)),
-            systicks_t ticks)
+            clock::duration_t ticks)
           {
             // FreeRTOS will store the full message, regardless of the nbytes.
             BaseType_t res = xQueueSend(obj->port_.handle, msg, ticks);
@@ -909,7 +909,7 @@ namespace os
         timed_receive (rtos::Message_queue* obj, char* msg,
             std::size_t nbytes __attribute__((unused)),
             mqueue::priority_t* mprio __attribute__((unused)),
-            systicks_t ticks)
+            clock::duration_t ticks)
           {
             BaseType_t res = xQueueReceive(obj->port_.handle, msg, ticks);
             if (res != pdTRUE)
@@ -1037,7 +1037,7 @@ namespace os
         inline static result_t
         __attribute__((always_inline))
         timed_wait (rtos::Event_flags* obj, flags::mask_t mask,
-            systicks_t ticks, flags::mask_t* oflags, flags::mode_t mode)
+            clock::duration_t ticks, flags::mask_t* oflags, flags::mode_t mode)
           {
             EventBits_t bits;
 
