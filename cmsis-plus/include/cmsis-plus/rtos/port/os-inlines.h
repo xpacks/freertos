@@ -3,17 +3,26 @@
  *   (https://github.com/micro-os-plus)
  * Copyright (c) 2016 Liviu Ionescu.
  *
- * µOS++ is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation, version 3.
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom
+ * the Software is furnished to do so, subject to the following
+ * conditions:
  *
- * µOS++ is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /*
@@ -344,85 +353,85 @@ namespace os
 
 #endif /* OS_INCLUDE_RTOS_PORT_THREAD */
 
-      // ======================================================================
+    // ======================================================================
 
 #if defined(OS_INCLUDE_RTOS_PORT_TIMER)
 
-      class Timer
+    class Timer
       {
       public:
 
         inline static void
         __attribute__((always_inline))
         create (rtos::Timer* obj, timer::func_t function,
-                timer::func_args_t args)
-        {
-          // Start with 1 tick period and change it at start(), when the
-          // actual period is known.
-          // Note: args are passed as ID, this requires a small patch in
-          // timers.c to pass the pointer back.
-          obj->port_.handle = xTimerCreate (
-              obj->name (), 1,
-              obj->type_ == timer::run::once ? pdFALSE : pdTRUE, (void*) args,
-              (TaskFunction_t) function);
+            timer::func_args_t args)
+          {
+            // Start with 1 tick period and change it at start(), when the
+            // actual period is known.
+            // Note: args are passed as ID, this requires a small patch in
+            // timers.c to pass the pointer back.
+            obj->port_.handle = xTimerCreate (
+                obj->name (), 1,
+                obj->type_ == timer::run::once ? pdFALSE : pdTRUE, (void*) args,
+                (TaskFunction_t) function);
 
-          os_assert_throw (obj->port_.handle != NULL, ENOMEM);
-        }
+            os_assert_throw (obj->port_.handle != NULL, ENOMEM);
+          }
 
         inline static void
         __attribute__((always_inline))
         destroy (rtos::Timer* obj)
-        {
-          BaseType_t ret = xTimerDelete(obj->port_.handle, portMAX_DELAY);
+          {
+            BaseType_t ret = xTimerDelete(obj->port_.handle, portMAX_DELAY);
 
-          os_assert_throw (ret == pdTRUE, ENOTRECOVERABLE);
-        }
+            os_assert_throw (ret == pdTRUE, ENOTRECOVERABLE);
+          }
 
         inline static result_t
         __attribute__((always_inline))
         start (rtos::Timer* obj, clock::duration_t ticks)
-        {
-          if (xTimerIsTimerActive (obj->port_.handle) != pdFALSE)
-            {
-              if (xTimerReset(obj->port_.handle, 0) != pdPASS)
-                {
-                  return ENOTRECOVERABLE;
-                }
-            }
-          else
-            {
-              if (xTimerChangePeriod(obj->port_.handle, ticks, 10) == pdFAIL)
-                {
-                  return ENOTRECOVERABLE;
-                }
-              else
-                {
-                  if (xTimerStart(obj->port_.handle, 0) != pdPASS)
-                    {
-                      return ENOTRECOVERABLE;
-                    }
-                }
-            }
-          return result::ok;
-        }
+          {
+            if (xTimerIsTimerActive (obj->port_.handle) != pdFALSE)
+              {
+                if (xTimerReset(obj->port_.handle, 0) != pdPASS)
+                  {
+                    return ENOTRECOVERABLE;
+                  }
+              }
+            else
+              {
+                if (xTimerChangePeriod(obj->port_.handle, ticks, 10) == pdFAIL)
+                  {
+                    return ENOTRECOVERABLE;
+                  }
+                else
+                  {
+                    if (xTimerStart(obj->port_.handle, 0) != pdPASS)
+                      {
+                        return ENOTRECOVERABLE;
+                      }
+                  }
+              }
+            return result::ok;
+          }
 
         inline static result_t
         __attribute__((always_inline))
         stop (rtos::Timer* obj)
-        {
-          if (xTimerIsTimerActive (obj->port_.handle) == pdFALSE)
-            {
-              return EAGAIN;
-            }
-          else
-            {
-              if (xTimerStop(obj->port_.handle, 0) != pdPASS)
-                {
-                  return ENOTRECOVERABLE;
-                }
-            }
-          return result::ok;
-        }
+          {
+            if (xTimerIsTimerActive (obj->port_.handle) == pdFALSE)
+              {
+                return EAGAIN;
+              }
+            else
+              {
+                if (xTimerStop(obj->port_.handle, 0) != pdPASS)
+                  {
+                    return ENOTRECOVERABLE;
+                  }
+              }
+            return result::ok;
+          }
 
         // --------------------------------------------------------------------
       };
