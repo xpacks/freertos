@@ -131,17 +131,10 @@ namespace os
 
         inline static result_t
         __attribute__((always_inline))
-        wait (clock::duration_t ticks)
+        wait_for (clock::duration_t ticks)
         {
-#if 0
-          duration_t t = ticks / 10;
-          t = ((t == 0) ? 1 : t);
-          // trace_printf("p:%s(%d)=%d\n", __func__, ticks, t);
-          vTaskDelay (t);
-#else
           vTaskDelay (ticks);
-#endif
-          return ETIMEDOUT;
+          return result::ok;
         }
       };
 
@@ -273,14 +266,14 @@ namespace os
 
         inline static void
         __attribute__((always_inline))
-        sleep (rtos::Thread* obj)
+        wait (rtos::Thread* obj)
         {
           vTaskSuspend (obj->port_.handle);
         }
 
         inline static void
         __attribute__((always_inline))
-        wakeup (rtos::Thread* obj)
+        resume (rtos::Thread* obj)
         {
           if (rtos::scheduler::in_handler_mode ())
             {
