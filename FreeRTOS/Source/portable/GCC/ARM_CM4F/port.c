@@ -233,7 +233,9 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 
 	*pxTopOfStack = portINITIAL_XPSR;	/* xPSR */
 	pxTopOfStack--;
-	*pxTopOfStack = ( StackType_t ) pxCode;	/* PC */
+  // [ILG]
+  *pxTopOfStack = (( StackType_t ) (pxCode)) & (~1);  /* PC with LSB=0 */
+	// *pxTopOfStack = ( StackType_t ) pxCode;	/* PC */
 	pxTopOfStack--;
 	*pxTopOfStack = ( StackType_t ) portTASK_RETURN_ADDRESS;	/* LR */
 
