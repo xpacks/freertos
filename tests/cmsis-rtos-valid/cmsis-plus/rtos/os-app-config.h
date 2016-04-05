@@ -39,11 +39,11 @@
 
 // Special applications may require to add some custom
 // storage in the thread control block.
-#define OS_INCLUDE_RTOS_CUSTOM_THREAD_USER_STORAGE          (1)
-typedef struct os_thread_user_storage_s
-{
-  int   dummy;
-} os_thread_user_storage_t;
+//#define OS_INCLUDE_RTOS_CUSTOM_THREAD_USER_STORAGE          (1)
+//typedef struct os_thread_user_storage_s
+//{
+//  int   dummy;
+//} os_thread_user_storage_t;
 
 // ----------------------------------------------------------------------------
 
@@ -58,6 +58,21 @@ typedef struct os_thread_user_storage_s
 // #define OS_INCLUDE_RTOS_PORT_MEMORY_POOL                    (1)
 #define OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE                  (1)
 #define OS_INCLUDE_RTOS_PORT_EVENT_FLAGS                    (1)
+#endif
+
+// ----------------------------------------------------------------------------
+
+#if 0
+#define OS_TRACE_RTOS_CLOCKS
+#define OS_TRACE_RTOS_CONDVAR
+#define OS_TRACE_RTOS_EVFLAGS
+#define OS_TRACE_RTOS_LISTS
+#define OS_TRACE_RTOS_MEMPOOL
+#define OS_TRACE_RTOS_MQUEUE
+#define OS_TRACE_RTOS_MUTEX
+#define OS_TRACE_RTOS_SEMAPHORE
+#define OS_TRACE_RTOS_THREAD
+#define OS_TRACE_RTOS_TIMER
 #endif
 
 // ----------------------------------------------------------------------------
