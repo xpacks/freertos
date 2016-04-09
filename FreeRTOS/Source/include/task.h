@@ -2042,6 +2042,11 @@ eSleepModeStatus eTaskConfirmSleepModeStatus( void ) PRIVILEGED_FUNCTION;
  */
 void *pvTaskIncrementMutexHeldCount( void ) PRIVILEGED_FUNCTION;
 
+// [ILG]
+void vTaskPrepareSuspend( void );
+void vTaskPerformSuspend( void );
+void vTaskGenericResume( TaskHandle_t xTaskToResume );
+
 #ifdef __cplusplus
 }
 #endif

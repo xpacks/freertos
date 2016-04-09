@@ -1376,6 +1376,64 @@ StackType_t *pxTopOfStack;
 		}
 	}
 
+	// [ILG]
+  // Must be called from a critical section.
+  void vTaskPrepareSuspend( void )
+  {
+      traceTASK_SUSPEND( pxCurrentTCB );
+
+      /* Remove task from the ready/delayed list and place in the
+      suspended list. */
+      if( uxListRemove( &( pxCurrentTCB->xGenericListItem ) ) == ( UBaseType_t ) 0 )
+      {
+        taskRESET_READY_PRIORITY( pxCurrentTCB->uxPriority );
+      }
+      else
+      {
+        mtCOVERAGE_TEST_MARKER();
+      }
+
+      /* Is the task waiting on an event also? */
+      if( listLIST_ITEM_CONTAINER( &( pxCurrentTCB->xEventListItem ) ) != NULL )
+      {
+        ( void ) uxListRemove( &( pxCurrentTCB->xEventListItem ) );
+      }
+      else
+      {
+        mtCOVERAGE_TEST_MARKER();
+      }
+
+      vListInsertEnd( &xSuspendedTaskList, &( pxCurrentTCB->xGenericListItem ) );
+  }
+
+  void vTaskPerformSuspend( void )
+  {
+      if( xSchedulerRunning != pdFALSE )
+      {
+        /* The current task has just been suspended. */
+        configASSERT( uxSchedulerSuspended == 0 );
+        portYIELD_WITHIN_API();
+      }
+      else
+      {
+        /* The scheduler is not running, but the task that was pointed
+        to by pxCurrentTCB has just been suspended and pxCurrentTCB
+        must be adjusted to point to a different task. */
+        if( listCURRENT_LIST_LENGTH( &xSuspendedTaskList ) == uxCurrentNumberOfTasks )
+        {
+          /* No other tasks are ready, so set pxCurrentTCB back to
+          NULL so when the next task is created pxCurrentTCB will
+          be set to point to it no matter what its relative priority
+          is. */
+          pxCurrentTCB = NULL;
+        }
+        else
+        {
+          vTaskSwitchContext();
+        }
+      }
+  }
+
 #endif /* INCLUDE_vTaskSuspend */
 /*-----------------------------------------------------------*/
 
@@ -1440,9 +1498,7 @@ StackType_t *pxTopOfStack;
 		{
 			taskENTER_CRITICAL();
 			{
-			  // [ILG]
-        if( 1 || prvTaskIsTaskSuspended( pxTCB ) == pdTRUE )
-				// if( prvTaskIsTaskSuspended( pxTCB ) == pdTRUE )
+				if( prvTaskIsTaskSuspended( pxTCB ) == pdTRUE )
 				{
 					traceTASK_RESUME( pxTCB );
 
@@ -1476,6 +1532,58 @@ StackType_t *pxTopOfStack;
 			mtCOVERAGE_TEST_MARKER();
 		}
 	}
+
+	// [ILG]
+  void vTaskGenericResume( TaskHandle_t xTaskToResume )
+  {
+  TCB_t * const pxTCB = ( TCB_t * ) xTaskToResume;
+
+    /* It does not make sense to resume the calling task. */
+    configASSERT( xTaskToResume );
+
+    /* The parameter cannot be NULL as it is impossible to resume the
+    currently executing task. */
+    if( ( pxTCB != NULL ) && ( pxTCB != pxCurrentTCB ) )
+    {
+      taskENTER_CRITICAL();
+      {
+        // [ILG]
+        // Do not limit to suspended, also resume timeout tasks.
+        if( 1 || prvTaskIsTaskSuspended( pxTCB ) == pdTRUE )
+        // if( prvTaskIsTaskSuspended( pxTCB ) == pdTRUE )
+        {
+          traceTASK_RESUME( pxTCB );
+
+          /* As we are in a critical section we can access the ready
+          lists even if the scheduler is suspended. */
+          ( void ) uxListRemove(  &( pxTCB->xGenericListItem ) );
+          prvAddTaskToReadyList( pxTCB );
+
+          /* We may have just resumed a higher priority task. */
+          if( pxTCB->uxPriority >= pxCurrentTCB->uxPriority )
+          {
+            /* This yield may not cause the task just resumed to run,
+            but will leave the lists in the correct state for the
+            next yield. */
+            taskYIELD_IF_USING_PREEMPTION();
+          }
+          else
+          {
+            mtCOVERAGE_TEST_MARKER();
+          }
+        }
+        else
+        {
+          mtCOVERAGE_TEST_MARKER();
+        }
+      }
+      taskEXIT_CRITICAL();
+    }
+    else
+    {
+      mtCOVERAGE_TEST_MARKER();
+    }
+  }
 
 #endif /* INCLUDE_vTaskSuspend */
 

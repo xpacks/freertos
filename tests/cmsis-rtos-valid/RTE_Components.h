@@ -23,6 +23,6 @@
 #define RTE_RV_SIGNAL                      /* RTOS Validation - Signal test enabled */
 #define RTE_RV_THREAD                      /* RTOS Validation - Thread test enabled */
 #define RTE_RV_TIMER                       /* RTOS Validation - Timer test enabled */
-// #define RTE_RV_WAITFUNC                    /* RTOS Validation - WaitFunc test enabled */
+#define RTE_RV_WAITFUNC                    /* RTOS Validation - WaitFunc test enabled */
 
 #endif /* RTE_COMPONENTS_H */

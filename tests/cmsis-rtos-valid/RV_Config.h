@@ -26,4 +26,6 @@
 #define BUFFER_ASSERTIONS           128  
 // </h>
   
+#define HW_PRESENT  (1)
+
 #endif /* __RV_CONFIG_H */

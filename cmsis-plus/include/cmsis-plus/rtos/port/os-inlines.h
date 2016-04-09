@@ -102,6 +102,12 @@ namespace os
           xTaskResumeAll ();
         }
 
+        inline void
+        reschedule (void)
+        {
+          // Custom extension.
+          vTaskPerformSuspend ();
+        }
       } /* namespace scheduler */
 
       namespace interrupts
@@ -116,12 +122,25 @@ namespace os
           __attribute__((always_inline))
           enter (void)
           {
+#if 0
             // TODO: on M0 & M0+ cores there is no BASEPRI
             uint32_t pri = __get_BASEPRI ();
             __set_BASEPRI_MAX (
                 OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY
-                    << ((8 - __NVIC_PRIO_BITS)));
+                << ((8 - __NVIC_PRIO_BITS)));
+
             return pri;
+#else
+            if (!scheduler::in_handler_mode ())
+              {
+                taskENTER_CRITICAL();
+                return 0;
+              }
+            else
+              {
+                return portSET_INTERRUPT_MASK_FROM_ISR();
+              }
+#endif
           }
 
           // Exit an IRQ critical section
@@ -129,7 +148,18 @@ namespace os
           __attribute__((always_inline))
           exit (rtos::interrupts::status_t status __attribute__((unused)))
           {
+#if 0
             __set_BASEPRI (status);
+#else
+            if (!scheduler::in_handler_mode ())
+              {
+                taskEXIT_CRITICAL();
+              }
+            else
+              {
+                portCLEAR_INTERRUPT_MASK_FROM_ISR(status);
+              }
+#endif
           }
         };
       } /* namespace interrupts */
@@ -170,6 +200,14 @@ namespace os
         yield (void)
         {
           taskYIELD();
+        }
+
+        inline void
+        __attribute__((always_inline))
+        prepare_suspend (void)
+        {
+          // Custom extension.
+          vTaskPrepareSuspend ();
         }
 
       } /* namespace this_thread */
@@ -273,12 +311,14 @@ namespace os
           }
 #endif
 
+#if 0
         inline static void
         __attribute__((always_inline))
         wait (rtos::Thread* obj)
         {
           vTaskSuspend (obj->port_.handle);
         }
+#endif
 
         inline static void
         __attribute__((always_inline))
