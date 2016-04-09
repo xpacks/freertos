@@ -315,9 +315,9 @@ namespace os
         inline static void
         __attribute__((always_inline))
         wait (rtos::Thread* obj)
-        {
-          vTaskSuspend (obj->port_.handle);
-        }
+          {
+            vTaskSuspend (obj->port_.handle);
+          }
 #endif
 
         inline static void
@@ -331,7 +331,7 @@ namespace os
             }
           else
             {
-              vTaskResume (obj->port_.handle);
+              vTaskGenericResume (obj->port_.handle);
               // trace_putchar('^');
               taskYIELD();
             }
@@ -1079,7 +1079,8 @@ namespace os
         inline static result_t
         __attribute__((always_inline))
         timed_wait (rtos::Event_flags* obj, flags::mask_t mask,
-            clock::duration_t ticks, flags::mask_t* oflags, flags::mode_t mode)
+            clock::duration_t ticks, flags::mask_t* oflags,
+            flags::mode_t mode)
           {
             EventBits_t bits;
 
