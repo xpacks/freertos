@@ -53,6 +53,7 @@
 #include "semphr.h"
 
 #include <cmsis_device.h>
+#include <cmsis-plus/diag/trace.h>
 
 namespace os
 {
@@ -90,16 +91,16 @@ namespace os
 
         inline void
         __attribute__((always_inline))
-        lock (void)
+        lock (rtos::scheduler::status_t status)
         {
-          vTaskSuspendAll ();
-        }
-
-        inline void
-        __attribute__((always_inline))
-        unlock (rtos::scheduler::status_t status __attribute__((unused)))
-        {
-          xTaskResumeAll ();
+          if (status)
+            {
+              vTaskSuspendAll ();
+            }
+          else
+            {
+              xTaskResumeAll ();
+            }
         }
 
         inline void
@@ -162,6 +163,58 @@ namespace os
 #endif
           }
         };
+
+        // ====================================================================
+
+        class Uncritical_section
+        {
+
+        public:
+
+          // Enter an IRQ uncritical section
+          inline static rtos::interrupts::status_t
+          __attribute__((always_inline))
+          enter (void)
+          {
+#if 1
+            // TODO: on M0 & M0+ cores there is no BASEPRI
+            uint32_t pri = __get_BASEPRI ();
+            __set_BASEPRI (0);
+
+            return pri;
+#else
+            if (!scheduler::in_handler_mode ())
+              {
+                taskENTER_CRITICAL();
+                return 0;
+              }
+            else
+              {
+                return portSET_INTERRUPT_MASK_FROM_ISR();
+              }
+#endif
+          }
+
+          // Exit an IRQ critical section
+          inline static void
+          __attribute__((always_inline))
+          exit (rtos::interrupts::status_t status __attribute__((unused)))
+          {
+#if 1
+            __set_BASEPRI (status);
+#else
+            if (!scheduler::in_handler_mode ())
+              {
+                taskEXIT_CRITICAL();
+              }
+            else
+              {
+                portCLEAR_INTERRUPT_MASK_FROM_ISR(status);
+              }
+#endif
+          }
+        };
+
       } /* namespace interrupts */
 
       class Systick_clock
