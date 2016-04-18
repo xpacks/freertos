@@ -602,7 +602,7 @@ namespace os
 
           if (res != pdTRUE)
             {
-              return EAGAIN;
+              return EWOULDBLOCK;
             }
 
           obj->owner_ = &rtos::this_thread::thread ();
@@ -769,7 +769,7 @@ namespace os
               if (xSemaphoreGiveFromISR(obj->port_.handle,
                   &thread_woken) != pdTRUE)
                 {
-                  return EOVERFLOW;
+                  return EAGAIN;
                 }
               portEND_SWITCHING_ISR(thread_woken);
             }
@@ -777,7 +777,7 @@ namespace os
             {
               if (xSemaphoreGive (obj->port_.handle) != pdTRUE)
                 {
-                  return EOVERFLOW;
+                  return EAGAIN;
                 }
             }
           ++(obj->count_);
@@ -809,13 +809,13 @@ namespace os
               if (xSemaphoreTakeFromISR(obj->port_.handle,
                   &thread_woken) != pdTRUE)
                 {
-                  return EAGAIN;
+                  return EWOULDBLOCK;
                 }
               portEND_SWITCHING_ISR(thread_woken);
             }
           else if (xSemaphoreTake (obj->port_.handle, 0) != pdTRUE)
             {
-              return EAGAIN;
+              return EWOULDBLOCK;
             }
 
           --(obj->count_);
@@ -929,7 +929,7 @@ namespace os
               if (xQueueSendFromISR(obj->port_.handle, msg,
                   &thread_woken) != pdTRUE)
                 {
-                  return EAGAIN;
+                  return EWOULDBLOCK;
                 }
               portEND_SWITCHING_ISR(thread_woken);
             }
@@ -937,7 +937,7 @@ namespace os
             {
               if (xQueueSend (obj->port_.handle, msg, 0) != pdTRUE)
                 {
-                  return EAGAIN;
+                  return EWOULDBLOCK;
                 }
             }
 
@@ -999,7 +999,7 @@ namespace os
               if (xQueueReceiveFromISR (obj->port_.handle, msg,
                                         &thread_woken) != pdTRUE)
                 {
-                  return EAGAIN;
+                  return EWOULDBLOCK;
                 }
               portEND_SWITCHING_ISR(thread_woken);
             }
@@ -1007,7 +1007,7 @@ namespace os
             {
               if (xQueueReceive (obj->port_.handle, msg, 0) != pdTRUE)
                 {
-                  return EAGAIN;
+                  return EWOULDBLOCK;
                 }
             }
 
@@ -1149,7 +1149,7 @@ namespace os
                 }
             }
 
-          return EAGAIN;
+          return EWOULDBLOCK;
         }
 
         inline static result_t
