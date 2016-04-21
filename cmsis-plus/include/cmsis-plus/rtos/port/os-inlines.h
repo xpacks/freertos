@@ -241,7 +241,10 @@ namespace os
         thread (void)
         {
           TaskHandle_t th = xTaskGetCurrentTaskHandle ();
-
+          if (th == nullptr)
+            {
+              return nullptr;
+            }
           void* p = pvTaskGetThreadLocalStoragePointer (th, 0);
           return ((rtos::Thread*) p);
         }
