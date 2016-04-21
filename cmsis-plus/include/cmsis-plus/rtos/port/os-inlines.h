@@ -236,16 +236,14 @@ namespace os
 
       namespace this_thread
       {
-        inline rtos::Thread&
+        inline rtos::Thread*
         __attribute__((always_inline))
         thread (void)
         {
           TaskHandle_t th = xTaskGetCurrentTaskHandle ();
 
           void* p = pvTaskGetThreadLocalStoragePointer (th, 0);
-          assert(p != nullptr);
-
-          return *((rtos::Thread*) p);
+          return ((rtos::Thread*) p);
         }
 
         inline void
@@ -1298,8 +1296,7 @@ namespace os
 
     // ======================================================================
 
-    }
-  /* namespace port */
+    } /* namespace port */
   } /* namespace rtos */
 } /* namespace os */
 
