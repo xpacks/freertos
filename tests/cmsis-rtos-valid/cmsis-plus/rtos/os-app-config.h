@@ -34,10 +34,15 @@
 #define CMSIS_PLUS_RTOS_OS_APP_CONFIG_H_
 
 // ----------------------------------------------------------------------------
-
+#if defined(__APPLE__)
+#define OS_INTEGER_SYSTICK_FREQUENCY_HZ                     (500)
+#else
 #define OS_INTEGER_SYSTICK_FREQUENCY_HZ                     (1000)
+#endif
 
 #define OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES               (1024)
+
+#define OS_INTEGER_RTOS_IDLE_STACK_SIZE_BYTES               (500)
 
 // With 4 bits NVIC, there are 16 levels, 0 = highest, 15 = lowest
 
@@ -56,8 +61,11 @@
 
 // ----------------------------------------------------------------------------
 
+#if defined(__ARM_EABI__)
+
 // Request the inclusion of custom implementations.
 #define OS_INCLUDE_RTOS_PORT_THREAD                         (1)
+
 #if 0
 #define OS_INCLUDE_RTOS_PORT_TIMER                          (1)
 #define OS_INCLUDE_RTOS_PORT_SYSTICK_CLOCK_SLEEP_FOR        (1)
@@ -67,6 +75,8 @@
 // #define OS_INCLUDE_RTOS_PORT_MEMORY_POOL                    (1)
 #define OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE                  (1)
 #define OS_INCLUDE_RTOS_PORT_EVENT_FLAGS                    (1)
+#endif
+
 #endif
 
 // ----------------------------------------------------------------------------
