@@ -72,6 +72,14 @@ namespace os
           return result::ok;
         }
 
+        inline void
+        __attribute__((always_inline))
+        greeting (void)
+        {
+          trace::printf ("Running on top of FreeRTOS %s.\n",
+          tskKERNEL_VERSION_NUMBER);
+        }
+
         inline bool
         __attribute__((always_inline))
         in_handler_mode (void)
@@ -104,7 +112,7 @@ namespace os
         }
 
         inline void
-        reschedule (void)
+        reschedule (bool save __attribute__((unused)))
         {
           // Custom extension.
           vTaskPerformSuspend ();
@@ -221,6 +229,13 @@ namespace os
       {
       public:
 
+        inline static void
+        __attribute__((always_inline))
+        start (void)
+        {
+          ;
+        }
+
         inline static result_t
         __attribute__((always_inline))
         wait_for (clock::duration_t ticks)
@@ -297,8 +312,9 @@ namespace os
         __attribute__((always_inline))
         create (rtos::Thread* obj)
         {
-          uint16_t stack_size_words = (uint16_t) (obj->stack_size_bytes_
-              / (sizeof(StackType_t)));
+          uint16_t stack_size_words =
+              (uint16_t) (obj->context ().stack ().size ()
+                  / (sizeof(StackType_t)));
           if (stack_size_words < configMINIMAL_STACK_SIZE)
             {
               stack_size_words = configMINIMAL_STACK_SIZE;
@@ -330,14 +346,35 @@ namespace os
             }
         }
 
+        [[noreturn]]
         inline static void
         __attribute__((always_inline))
-        destroy (rtos::Thread* obj __attribute__((unused)))
+        destroy_this (rtos::Thread* obj)
         {
           void* handle = obj->port_.handle;
           // Remove the reference to the destroyed thread.
           obj->port_.handle = nullptr;
+          trace::printf ("port::%s() vTaskDelete(%p)\n", __func__, handle);
+
+          vTaskDelete (nullptr);
+          assert(true);
+          for (;;)
+            ;
+          // Does not return
+        }
+
+        inline static void
+        __attribute__((always_inline))
+        destroy_other (rtos::Thread* obj)
+        {
+          void* handle = obj->port_.handle;
+          // Remove the reference to the destroyed thread.
+          obj->port_.handle = nullptr;
+          trace::printf ("port::%s() vTaskDelete(%p)\n", __func__, handle);
+          assert(handle != nullptr);
+
           vTaskDelete (handle);
+          // Does return
         }
 
 #if 0
@@ -1299,7 +1336,8 @@ namespace os
 
     // ======================================================================
 
-    } /* namespace port */
+    }
+  /* namespace port */
   } /* namespace rtos */
 } /* namespace os */
 

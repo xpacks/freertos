@@ -76,6 +76,17 @@ namespace os
         using element_t = long long;
       } /* namespace stack */
 
+      namespace interrupts
+      {
+        using status_t = uint32_t;
+      } /* namespace interrupts */
+
+      namespace scheduler
+      {
+        void
+        reschedule (bool save = true);
+      } /* namespace scheduler */
+
       using Waiting_threads_list = rtos::Waiting_threads_list;
       using Clock_threads_list = rtos::Clock_threads_list;
 
