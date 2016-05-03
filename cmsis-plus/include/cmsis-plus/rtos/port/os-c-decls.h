@@ -41,6 +41,10 @@
 #ifndef CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_
 #define CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_
 
+#include <stdint.h>
+
+typedef uint32_t os_port_irq_status_t;
+
 #if defined(OS_INCLUDE_RTOS_PORT_THREAD)
 
 typedef struct os_thread_port_data_s
