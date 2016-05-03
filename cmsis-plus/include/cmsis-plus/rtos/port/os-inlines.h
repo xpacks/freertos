@@ -282,23 +282,23 @@ namespace os
       } /* namespace this_thread */
 
       inline unsigned portBASE_TYPE
-      makeFreeRtosPriority (thread::priority_t priority)
+      makeFreeRtosPriority (rtos::thread::priority_t priority)
       {
         unsigned portBASE_TYPE fr_prio = tskIDLE_PRIORITY;
 
-        fr_prio += (priority - thread::priority::idle);
+        fr_prio += (priority - rtos::thread::priority::idle);
 
         return fr_prio;
       }
 
-      inline thread::priority_t
+      inline rtos::thread::priority_t
       makeCmsisPriority (unsigned portBASE_TYPE priority)
       {
-        thread::priority_t cm_prio = thread::priority::idle;
+        rtos::thread::priority_t cm_prio = rtos::thread::priority::idle;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
-        cm_prio += (thread::priority_t) (priority - tskIDLE_PRIORITY);
+        cm_prio += (rtos::thread::priority_t) (priority - tskIDLE_PRIORITY);
 #pragma GCC diagnostic pop
 
         return cm_prio;
@@ -428,12 +428,12 @@ namespace os
             }
         }
 
-        inline static thread::priority_t
+        inline static rtos::thread::priority_t
         __attribute__((always_inline))
         sched_prio (rtos::Thread* obj)
         {
           UBaseType_t p = uxTaskPriorityGet (obj->port_.handle);
-          thread::priority_t prio = makeCmsisPriority (p);
+          rtos::thread::priority_t prio = makeCmsisPriority (p);
           assert(prio == obj->prio_);
 
           return prio;
@@ -441,7 +441,7 @@ namespace os
 
         inline static result_t
         __attribute__((always_inline))
-        sched_prio (rtos::Thread* obj, thread::priority_t prio)
+        sched_prio (rtos::Thread* obj, rtos::thread::priority_t prio)
         {
           obj->prio_ = prio;
 
