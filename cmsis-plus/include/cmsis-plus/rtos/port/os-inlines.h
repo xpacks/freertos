@@ -121,129 +121,114 @@ namespace os
 
       namespace interrupts
       {
-        class Critical_section
+        // Enter an IRQ critical section
+        inline rtos::interrupts::status_t
+        __attribute__((always_inline))
+        Critical_section::enter (void)
         {
-
-        public:
-
-          // Enter an IRQ critical section
-          inline static rtos::interrupts::status_t
-          __attribute__((always_inline))
-          enter (void)
-          {
 #if 0
-            // TODO: on M0 & M0+ cores there is no BASEPRI
-            uint32_t pri = __get_BASEPRI ();
-            __set_BASEPRI_MAX (
-                OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY
-                << ((8 - __NVIC_PRIO_BITS)));
+          // TODO: on M0 & M0+ cores there is no BASEPRI
+          uint32_t pri = __get_BASEPRI ();
+          __set_BASEPRI_MAX (
+              OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY
+              << ((8 - __NVIC_PRIO_BITS)));
 
-            return pri;
+          return pri;
 #else
-            if (!scheduler::in_handler_mode ())
-              {
-                taskENTER_CRITICAL();
-                return 0;
-              }
-            else
-              {
-                return portSET_INTERRUPT_MASK_FROM_ISR();
-              }
+          if (!scheduler::in_handler_mode ())
+            {
+              taskENTER_CRITICAL();
+              return 0;
+            }
+          else
+            {
+              return portSET_INTERRUPT_MASK_FROM_ISR();
+            }
 #endif
-          }
+        }
 
-          // Exit an IRQ critical section
-          inline static void
-          __attribute__((always_inline))
-          exit (rtos::interrupts::status_t status __attribute__((unused)))
-          {
+        // Exit an IRQ critical section
+        inline void
+        __attribute__((always_inline))
+        Critical_section::exit (
+            rtos::interrupts::status_t status __attribute__((unused)))
+        {
 #if 0
-            __set_BASEPRI (status);
+          __set_BASEPRI (status);
 #else
-            if (!scheduler::in_handler_mode ())
-              {
-                taskEXIT_CRITICAL();
-              }
-            else
-              {
-                portCLEAR_INTERRUPT_MASK_FROM_ISR(status);
-              }
+          if (!scheduler::in_handler_mode ())
+            {
+              taskEXIT_CRITICAL();
+            }
+          else
+            {
+              portCLEAR_INTERRUPT_MASK_FROM_ISR(status);
+            }
 #endif
-          }
-        };
+        }
 
         // ====================================================================
 
-        class Uncritical_section
+        // Enter an IRQ uncritical section
+        inline rtos::interrupts::status_t
+        __attribute__((always_inline))
+        Uncritical_section::enter (void)
         {
-
-        public:
-
-          // Enter an IRQ uncritical section
-          inline static rtos::interrupts::status_t
-          __attribute__((always_inline))
-          enter (void)
-          {
 #if 1
-            // TODO: on M0 & M0+ cores there is no BASEPRI
-            uint32_t pri = __get_BASEPRI ();
-            __set_BASEPRI (0);
+          // TODO: on M0 & M0+ cores there is no BASEPRI
+          uint32_t pri = __get_BASEPRI ();
+          __set_BASEPRI (0);
 
-            return pri;
+          return pri;
 #else
-            if (!scheduler::in_handler_mode ())
-              {
-                taskENTER_CRITICAL();
-                return 0;
-              }
-            else
-              {
-                return portSET_INTERRUPT_MASK_FROM_ISR();
-              }
+          if (!scheduler::in_handler_mode ())
+            {
+              taskENTER_CRITICAL();
+              return 0;
+            }
+          else
+            {
+              return portSET_INTERRUPT_MASK_FROM_ISR();
+            }
 #endif
-          }
+        }
 
-          // Exit an IRQ critical section
-          inline static void
-          __attribute__((always_inline))
-          exit (rtos::interrupts::status_t status __attribute__((unused)))
-          {
+        // Exit an IRQ critical section
+        inline void
+        __attribute__((always_inline))
+        Uncritical_section::exit (
+            rtos::interrupts::status_t status __attribute__((unused)))
+        {
 #if 1
-            __set_BASEPRI (status);
+          __set_BASEPRI (status);
 #else
-            if (!scheduler::in_handler_mode ())
-              {
-                taskEXIT_CRITICAL();
-              }
-            else
-              {
-                portCLEAR_INTERRUPT_MASK_FROM_ISR(status);
-              }
+          if (!scheduler::in_handler_mode ())
+            {
+              taskEXIT_CRITICAL();
+            }
+          else
+            {
+              portCLEAR_INTERRUPT_MASK_FROM_ISR(status);
+            }
 #endif
-          }
-        };
+        }
 
       } /* namespace interrupts */
 
-      class Systick_clock
+      inline void
+      __attribute__((always_inline))
+      Systick_clock::start (void)
       {
-      public:
+        ;
+      }
 
-        inline static void
-        __attribute__((always_inline))
-        start (void)
-        {
-          ;
-        }
-
-        inline static result_t
-        __attribute__((always_inline))
-        wait_for (clock::duration_t ticks)
-        {
-          vTaskDelay (ticks);
-          return result::ok;
-        }
-      };
+      inline result_t
+      __attribute__((always_inline))
+      Systick_clock::wait_for (clock::duration_t ticks)
+      {
+        vTaskDelay (ticks);
+        return result::ok;
+      }
 
       // ======================================================================
 
@@ -304,183 +289,124 @@ namespace os
         return cm_prio;
       }
 
-      class Thread
+      inline void
+      __attribute__((always_inline))
+      Thread::create (rtos::Thread* obj)
       {
-      public:
-
-        inline static void
-        __attribute__((always_inline))
-        create (rtos::Thread* obj)
-        {
-          uint16_t stack_size_words =
-              (uint16_t) (obj->context ().stack ().size ()
-                  / (sizeof(StackType_t)));
-          if (stack_size_words < configMINIMAL_STACK_SIZE)
-            {
-              stack_size_words = configMINIMAL_STACK_SIZE;
-            }
+        uint16_t stack_size_words = (uint16_t) (
+            obj->context ().stack ().size () / (sizeof(StackType_t)));
+        if (stack_size_words < configMINIMAL_STACK_SIZE)
+          {
+            stack_size_words = configMINIMAL_STACK_SIZE;
+          }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
-          BaseType_t res;
+        BaseType_t res;
 #pragma GCC diagnostic pop
 
-          TaskHandle_t th;
-          res = xTaskCreate((TaskFunction_t ) rtos::Thread::_invoke_with_exit,
-                            (const portCHAR *) obj->name (), stack_size_words,
-                            obj, makeFreeRtosPriority (obj->prio_), &th);
-          if (res == pdPASS)
-            {
-              obj->func_result_ = nullptr;
-
-              // Remember pointer to implementation.
-              obj->port_.handle = th;
-
-              // Store the pointer to this Thread as index 0 in the FreeRTOS
-              // local storage pointers.
-              vTaskSetThreadLocalStoragePointer (th, 0, obj);
-            }
-          else
-            {
-              assert(res == pdPASS);
-            }
-        }
-
-        [[noreturn]]
-        inline static void
-        __attribute__((always_inline))
-        destroy_this (rtos::Thread* obj)
-        {
-          void* handle = obj->port_.handle;
-          // Remove the reference to the destroyed thread.
-          obj->port_.handle = nullptr;
-          trace::printf ("port::%s() vTaskDelete(%p)\n", __func__, handle);
-
-          vTaskDelete (nullptr);
-          assert(true);
-          for (;;)
-            ;
-          // Does not return
-        }
-
-        inline static void
-        __attribute__((always_inline))
-        destroy_other (rtos::Thread* obj)
-        {
-          void* handle = obj->port_.handle;
-          // Remove the reference to the destroyed thread.
-          obj->port_.handle = nullptr;
-          trace::printf ("port::%s() vTaskDelete(%p)\n", __func__, handle);
-          assert(handle != nullptr);
-
-          vTaskDelete (handle);
-          // Does return
-        }
-
-#if 0
-        inline static void
-        __attribute__((always_inline))
-        exit (rtos::Thread* obj)
+        TaskHandle_t th;
+        res = xTaskCreate((TaskFunction_t ) rtos::Thread::_invoke_with_exit,
+                          (const portCHAR *) obj->name (), stack_size_words,
+                          obj, makeFreeRtosPriority (obj->prio_), &th);
+        if (res == pdPASS)
           {
-            // Clear the handle, further uses should crash.
-            obj->port_.handle = nullptr;
+            obj->func_result_ = nullptr;
 
-            // Passing a nullptr excludes killing another thread.
-            vTaskDelete (nullptr);
-            // Does not return!
+            // Remember pointer to implementation.
+            obj->port_.handle = th;
+
+            // Store the pointer to this Thread as index 0 in the FreeRTOS
+            // local storage pointers.
+            vTaskSetThreadLocalStoragePointer (th, 0, obj);
           }
-
-        inline static result_t
-        __attribute__((always_inline))
-        kill (rtos::Thread* obj)
+        else
           {
-            // Called from another thread.
-            //vTaskSuspend (obj->port_.handle);
-
-            vTaskDelete (obj->port_.handle);
-            return result::ok;
+            assert(res == pdPASS);
           }
-#endif
+      }
 
-#if 0
-        inline static void
-        __attribute__((always_inline))
-        wait (rtos::Thread* obj)
+      [[noreturn]]
+      inline void
+      __attribute__((always_inline))
+      Thread::destroy_this (rtos::Thread* obj)
+      {
+        void* handle = obj->port_.handle;
+        // Remove the reference to the destroyed thread.
+        obj->port_.handle = nullptr;
+        trace::printf ("port::%s() vTaskDelete(%p)\n", __func__, handle);
+
+        vTaskDelete (nullptr);
+        assert(true);
+        for (;;)
+          ;
+        // Does not return
+      }
+
+      inline void
+      __attribute__((always_inline))
+      Thread::destroy_other (rtos::Thread* obj)
+      {
+        void* handle = obj->port_.handle;
+        // Remove the reference to the destroyed thread.
+        obj->port_.handle = nullptr;
+        trace::printf ("port::%s() vTaskDelete(%p)\n", __func__, handle);
+        assert(handle != nullptr);
+
+        vTaskDelete (handle);
+        // Does return
+      }
+
+      inline void
+      __attribute__((always_inline))
+      Thread::resume (rtos::Thread* obj)
+      {
+        if (rtos::scheduler::in_handler_mode ())
           {
-            vTaskSuspend (obj->port_.handle);
+            BaseType_t must_yield = xTaskResumeFromISR (obj->port_.handle);
+            portEND_SWITCHING_ISR(must_yield);
           }
-#endif
-
-        inline static void
-        __attribute__((always_inline))
-        resume (rtos::Thread* obj)
-        {
-          if (rtos::scheduler::in_handler_mode ())
-            {
-              BaseType_t must_yield = xTaskResumeFromISR (obj->port_.handle);
-              portEND_SWITCHING_ISR(must_yield);
-            }
-          else
-            {
-              vTaskGenericResume (obj->port_.handle);
-              // trace_putchar('^');
-              taskYIELD();
-            }
-        }
-
-        inline static rtos::thread::priority_t
-        __attribute__((always_inline))
-        sched_prio (rtos::Thread* obj)
-        {
-          UBaseType_t p = uxTaskPriorityGet (obj->port_.handle);
-          rtos::thread::priority_t prio = makeCmsisPriority (p);
-          assert(prio == obj->prio_);
-
-          return prio;
-        }
-
-        inline static result_t
-        __attribute__((always_inline))
-        sched_prio (rtos::Thread* obj, rtos::thread::priority_t prio)
-        {
-          obj->prio_ = prio;
-
-          vTaskPrioritySet (obj->port_.handle, makeFreeRtosPriority (prio));
-
-          // The manual says it is done, but apparently still needed.
-          taskYIELD();
-
-          return result::ok;
-        }
-
-#if 0
-        inline static result_t
-        __attribute__((always_inline))
-        join (rtos::Thread* obj)
+        else
           {
-            for (;;)
-              {
-                if (obj->sched_state_ == thread::state::terminated)
-                  {
-                    break;
-                  }
-                //systick_clock.sleep_for (1);
-                xEventGroupWaitBits (obj->port_.event_flags, 1, pdTRUE, pdFALSE,
-                    portMAX_DELAY);
-              }
-            return result::ok;
+            vTaskGenericResume (obj->port_.handle);
+            // trace_putchar('^');
+            taskYIELD();
           }
-#endif
+      }
 
-        inline static result_t
-        __attribute__((always_inline))
-        detach (rtos::Thread* obj __attribute__((unused)))
-        {
-          return result::ok;
-        }
+      inline rtos::thread::priority_t
+      __attribute__((always_inline))
+      Thread::sched_prio (rtos::Thread* obj)
+      {
+        UBaseType_t p = uxTaskPriorityGet (obj->port_.handle);
+        rtos::thread::priority_t prio = makeCmsisPriority (p);
+        assert(prio == obj->prio_);
 
-        // --------------------------------------------------------------------
-      };
+        return prio;
+      }
+
+      inline result_t
+      __attribute__((always_inline))
+      Thread::sched_prio (rtos::Thread* obj, rtos::thread::priority_t prio)
+      {
+        obj->prio_ = prio;
+
+        vTaskPrioritySet (obj->port_.handle, makeFreeRtosPriority (prio));
+
+        // The manual says it is done, but apparently still needed.
+        taskYIELD();
+
+        return result::ok;
+      }
+
+      inline result_t
+      __attribute__((always_inline))
+      Thread::detach (rtos::Thread* obj __attribute__((unused)))
+      {
+        return result::ok;
+      }
+
+      // --------------------------------------------------------------------
 
 #endif /* OS_INCLUDE_RTOS_PORT_THREAD */
 
