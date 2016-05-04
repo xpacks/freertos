@@ -52,59 +52,30 @@ namespace os
 {
   namespace rtos
   {
-    class Thread;
-    class Waiting_threads_list;
-    class Clock_threads_list;
-    class Waiting_threads_list3;
-
     namespace port
     {
-      class Thread;
-      class Timer;
-      class Mutex;
-      class Condition_variable;
-      class Semaphore;
-      class Memory_pool;
-      class Message_queue;
-      class Event_flags;
-
       // ----------------------------------------------------------------------
 
       namespace stack
       {
+
+        // Stack word.
+        using element_t = uint32_t;
+
         // Align stack to 8 bytes.
-        using element_t = long long;
+        using allocation_element_t = uint64_t;
+
       } /* namespace stack */
+
+      // ----------------------------------------------------------------------
 
       namespace interrupts
       {
+
+        // Interrupts status.
         using status_t = uint32_t;
+
       } /* namespace interrupts */
-
-      namespace scheduler
-      {
-        void
-        reschedule (bool save = true);
-      } /* namespace scheduler */
-
-      using Waiting_threads_list = rtos::Waiting_threads_list;
-      using Clock_threads_list = rtos::Clock_threads_list;
-
-    // ----------------------------------------------------------------------
-
-    } /* namespace port */
-  } /* namespace rtos */
-} /* namespace os */
-
-// ----------------------------------------------------------------------------
-
-namespace os
-{
-  namespace rtos
-  {
-    namespace port
-    {
-    // ----------------------------------------------------------------------
 
     // ----------------------------------------------------------------------
 
