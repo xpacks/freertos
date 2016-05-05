@@ -58,23 +58,21 @@ namespace os
 
       namespace stack
       {
-
         // Stack word.
         using element_t = uint32_t;
 
         // Align stack to 8 bytes.
         using allocation_element_t = uint64_t;
-
       } /* namespace stack */
 
       // ----------------------------------------------------------------------
 
       namespace interrupts
       {
-
         // Interrupts status.
         using status_t = uint32_t;
 
+        constexpr status_t init_status = 0;
       } /* namespace interrupts */
 
     // ----------------------------------------------------------------------
