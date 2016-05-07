@@ -63,6 +63,13 @@ namespace os
 
         // Align stack to 8 bytes.
         using allocation_element_t = uint64_t;
+
+        // Currently not used by FreeRTOS.
+        // Initial value for the minimum stack size in bytes.
+        constexpr std::size_t min_size_bytes = 128;
+
+        // Initial value for the default stack size in bytes.
+        constexpr std::size_t default_size_bytes = 2048;
       } /* namespace stack */
 
       // ----------------------------------------------------------------------
