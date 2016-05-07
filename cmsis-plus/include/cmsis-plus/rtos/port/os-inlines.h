@@ -89,12 +89,13 @@ namespace os
           return (__get_IPSR () != 0);
         }
 
-        inline result_t
+        [[noreturn]] inline void
         __attribute__((always_inline))
         start (void)
         {
           vTaskStartScheduler ();
-          return result::ok;
+          for(;;)
+            ;
         }
 
         inline void
