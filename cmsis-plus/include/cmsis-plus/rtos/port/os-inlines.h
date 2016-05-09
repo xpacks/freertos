@@ -76,7 +76,7 @@ namespace os
         __attribute__((always_inline))
         greeting (void)
         {
-          trace::printf ("Running on top of FreeRTOS %s.\n",
+          trace::printf ("FreeRTOS %s scheduler; preemptive.\n",
           tskKERNEL_VERSION_NUMBER);
         }
 
@@ -94,7 +94,7 @@ namespace os
         start (void)
         {
           vTaskStartScheduler ();
-          for(;;)
+          for (;;)
             ;
         }
 
@@ -113,7 +113,7 @@ namespace os
         }
 
         inline void
-        reschedule (bool save __attribute__((unused)))
+        reschedule (void)
         {
           // Custom extension.
           vTaskPerformSuspend ();
