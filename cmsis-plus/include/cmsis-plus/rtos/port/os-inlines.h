@@ -639,7 +639,7 @@ namespace os
           return result::ok;
         }
 
-        inline static thread::priority_t
+        inline static rtos::thread::priority_t
         __attribute__((always_inline))
         prio_ceiling (const rtos::Mutex* obj)
         {
@@ -648,10 +648,10 @@ namespace os
 
         inline static result_t
         __attribute__((always_inline))
-        prio_ceiling (rtos::Mutex* obj, thread::priority_t prio_ceiling,
-                      thread::priority_t* old_prio_ceiling)
+        prio_ceiling (rtos::Mutex* obj, rtos::thread::priority_t prio_ceiling,
+                      rtos::thread::priority_t* old_prio_ceiling)
         {
-          thread::priority_t prio;
+          rtos::thread::priority_t prio;
             {
               // TODO: lock() must not adhere to the priority protocol.
               obj->lock ();
