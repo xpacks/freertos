@@ -78,6 +78,29 @@ namespace os
         {
           trace::printf ("FreeRTOS %s scheduler; preemptive.\n",
           tskKERNEL_VERSION_NUMBER);
+#if defined(OS_INCLUDE_RTOS_PORT_TIMER) \
+  || defined(OS_INCLUDE_RTOS_PORT_MUTEX) \
+  || defined(OS_INCLUDE_RTOS_PORT_SEMAPHORE) \
+  || defined(OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE) \
+  || defined(OS_INCLUDE_RTOS_PORT_EVENT_FLAGS)
+          trace::printf ("Using FreeRTOS features:");
+#if defined(OS_INCLUDE_RTOS_PORT_TIMER)
+          trace::printf (" timer");
+#endif
+#if defined(OS_INCLUDE_RTOS_PORT_MUTEX)
+          trace::printf (" mutex");
+#endif
+#if defined(OS_INCLUDE_RTOS_PORT_SEMAPHORE)
+          trace::printf (" semaphore");
+#endif
+#if defined(OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE)
+          trace::printf (" queue");
+#endif
+#if defined(OS_INCLUDE_RTOS_PORT_EVENT_FLAGS)
+          trace::printf (" flags");
+#endif
+          trace::printf (".\n");
+#endif
         }
 
         inline bool
@@ -231,9 +254,26 @@ namespace os
         return result::ok;
       }
 
+      extern "C" void
+      xPortSysTickHandler (void);
+
+      inline void
+      __attribute__((always_inline))
+      Systick_clock::_interrupt_service_routine (void)
+      {
+        xPortSysTickHandler ();
+      }
+
+      inline void
+      __attribute__((always_inline))
+      Realtime_clock::_interrupt_service_routine (void)
+      {
+        ;
+      }
+
       // ======================================================================
 
-#if defined(OS_INCLUDE_RTOS_PORT_THREAD)
+#if defined(OS_INCLUDE_RTOS_PORT_SCHEDULER)
 
       namespace this_thread
       {
@@ -409,7 +449,7 @@ namespace os
 
       // --------------------------------------------------------------------
 
-#endif /* OS_INCLUDE_RTOS_PORT_THREAD */
+#endif /* OS_INCLUDE_RTOS_PORT_SCHEDULER */
 
       // ======================================================================
 
