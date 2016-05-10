@@ -45,14 +45,14 @@
 
 typedef uint32_t os_port_irq_status_t;
 
-#if defined(OS_INCLUDE_RTOS_PORT_THREAD)
+#if defined(OS_INCLUDE_RTOS_PORT_SCHEDULER)
 
 typedef struct os_thread_port_data_s
   {
     void* handle;
   }os_thread_port_data_t;
 
-#endif /* OS_INCLUDE_RTOS_PORT_THREAD */
+#endif /* OS_INCLUDE_RTOS_PORT_SCHEDULER */
 
 #if defined(OS_INCLUDE_RTOS_PORT_TIMER)
 
