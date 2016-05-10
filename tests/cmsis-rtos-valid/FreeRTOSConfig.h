@@ -189,7 +189,7 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 standard names. */
 #define xPortPendSVHandler PendSV_Handler
 #define vPortSVCHandler SVC_Handler
-#define xPortSysTickHandler os_port_systick_handler
+// #define xPortSysTickHandler os_port_systick_handler
 
 #endif /* FREERTOS_CONFIG_H */
 
