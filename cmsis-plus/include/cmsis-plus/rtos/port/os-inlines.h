@@ -954,8 +954,8 @@ namespace os
         __attribute__((always_inline))
         timed_send (rtos::Message_queue* obj, const char* msg,
                     std::size_t nbytes __attribute__((unused)),
-                    mqueue::priority_t mprio __attribute__((unused)),
-                    clock::duration_t ticks)
+                    clock::duration_t ticks,
+                    mqueue::priority_t mprio __attribute__((unused)))
         {
 
           if (ticks == 0)
@@ -1025,8 +1025,8 @@ namespace os
         __attribute__((always_inline))
         timed_receive (rtos::Message_queue* obj, char* msg,
                        std::size_t nbytes __attribute__((unused)),
-                       mqueue::priority_t* mprio __attribute__((unused)),
-                       clock::duration_t ticks)
+                       clock::duration_t ticks,
+                       mqueue::priority_t* mprio __attribute__((unused)))
         {
 
           if (ticks == 0)
