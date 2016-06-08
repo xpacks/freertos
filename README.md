@@ -1,11 +1,11 @@
-# FreeRTOS - Cross Platform Real Time Operating System 
+# FreeRTOS - Cross Platform Real Time Operating System
 
 This project, hosted on [GitHub](https://github.com/xpacks),
 includes a selection of the FreeRTOS files.
 
 ## Version
 
-* V8.2.3
+* V9.0.0
 
 ## Documentation
 
@@ -16,14 +16,15 @@ http://www.freertos.org/a00106.html.
 
 The original files are stored in the `originals` branch.
 
-These files were extracted from `FreeRTOSV8.2.3.zip`.
+These files were extracted from `FreeRTOSv9.0.0.zip`.
 
 To save space, only the FreeRTOS folder was preserved and the following folders/files were removed:
 
-* Demo 
+* Demo
 * TraceCon
-* Source/portable/[BCIKoPRSTW]* 
-* Source/portable/M[PS]* 
-* Source/portable/GCC/[B-Z]* 
-* Source/portable/GCC/ARM7* 
+* Source/portable/[BCIKoPRSTW]*
+* Source/portable/M[PS]*
+* Source/portable/GCC/[B-Z]*
+* Source/portable/GCC/ARM7*
+* Source/portable/GCC/MikroC
 

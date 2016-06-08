@@ -19,10 +19,11 @@ IFS=$'\n\t'
 # RELEASE_VERSION="8.2.0"
 # RELEASE_VERSION="8.2.1"
 # RELEASE_VERSION="8.2.2"
-RELEASE_VERSION="8.2.3"
+# RELEASE_VERSION="8.2.3"
+RELEASE_VERSION="9.0.0"
 
-# RELEASE_V="v"
-RELEASE_V="V"
+RELEASE_V="v"
+# RELEASE_V="V"
 
 RELEASE_ID="V${RELEASE_VERSION}"
 FOLDER_PREFIX=""
@@ -65,10 +66,10 @@ find . -name '*.exe' -exec rm -v \{} \;
 # FOLDER=""
 FOLDER="FreeRTOS/"
 
-# mv FreeRTOSV* FreeRTOS 
+# mv FreeRTOSV* FreeRTOS
 
 mv FreeRTOS[vV]*/FreeRTOS .
-rm -rf FreeRTOS[vV]* 
+rm -rf FreeRTOS[vV]*
 
 set +e
 rm -rf ${FOLDER}Demo
@@ -80,11 +81,13 @@ ${FOLDER}Source/portable/[BCIKoPRSTW]* \
 ${FOLDER}Source/portable/M[PS]* \
 ${FOLDER}Source/portable/GCC/[B-Z]* \
 ${FOLDER}Source/portable/GCC/ARM7* \
+${FOLDER}Source/portable/MikroC \
+
 
 cp "${FOLDER}License/license.txt" "LICENSE.txt"
 
 cat <<EOF >README.md
-# FreeRTOS - Cross Platform Real Time Operating System 
+# FreeRTOS - Cross Platform Real Time Operating System
 
 This project, hosted on [GitHub](https://github.com/xpacks),
 includes a selection of the FreeRTOS files.
@@ -106,14 +109,17 @@ These files were extracted from \`${ARCHIVE_NAME}\`.
 
 To save space, only the FreeRTOS folder was preserved and the following folders/files were removed:
 
-* Demo 
+* Demo
 * TraceCon
-* Source/portable/[BCIKoPRSTW]* 
-* Source/portable/M[PS]* 
-* Source/portable/GCC/[B-Z]* 
-* Source/portable/GCC/ARM7* 
+* Source/portable/[BCIKoPRSTW]*
+* Source/portable/M[PS]*
+* Source/portable/GCC/[B-Z]*
+* Source/portable/GCC/ARM7*
+* Source/portable/GCC/MikroC
 
 EOF
 
 echo
-echo Check if ok and when ready, issue: \`git commit -m ${ARCHIVE_NAME}\`
+echo Check if ok and when ready, issue:
+echo git add -A
+echo git commit -m ${ARCHIVE_NAME}
