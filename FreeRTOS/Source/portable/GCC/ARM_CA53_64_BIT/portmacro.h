@@ -90,22 +90,27 @@
 #define portDOUBLE		double
 #define portLONG		long
 #define portSHORT		short
-#define portSTACK_TYPE	uint32_t
+#define portSTACK_TYPE	size_t
 #define portBASE_TYPE	long
 
 typedef portSTACK_TYPE StackType_t;
-typedef long BaseType_t;
-typedef unsigned long UBaseType_t;
+typedef portBASE_TYPE BaseType_t;
+typedef uint64_t UBaseType_t;
 
-typedef uint32_t TickType_t;
-#define portMAX_DELAY ( TickType_t ) 0xffffffffUL
+typedef uint64_t TickType_t;
+#define portMAX_DELAY ( ( TickType_t ) 0xffffffffffffffff )
+
+/* 32-bit tick type on a 32-bit architecture, so reads of the tick count do
+not need to be guarded with a critical section. */
+#define portTICK_TYPE_IS_ATOMIC 1
 
 /*-----------------------------------------------------------*/
 
 /* Hardware specifics. */
 #define portSTACK_GROWTH			( -1 )
 #define portTICK_PERIOD_MS			( ( TickType_t ) 1000 / configTICK_RATE_HZ )
-#define portBYTE_ALIGNMENT			8
+#define portBYTE_ALIGNMENT			16
+#define portPOINTER_SIZE_TYPE 		uint64_t
 
 /*-----------------------------------------------------------*/
 
@@ -114,17 +119,16 @@ typedef uint32_t TickType_t;
 /* Called at the end of an ISR that can cause a context switch. */
 #define portEND_SWITCHING_ISR( xSwitchRequired )\
 {												\
-extern uint32_t ulPortYieldRequired;			\
+extern uint64_t ullPortYieldRequired;			\
 												\
 	if( xSwitchRequired != pdFALSE )			\
 	{											\
-		ulPortYieldRequired = pdTRUE;			\
+		ullPortYieldRequired = pdTRUE;			\
 	}											\
 }
 
 #define portYIELD_FROM_ISR( x ) portEND_SWITCHING_ISR( x )
-#define portYIELD() __asm volatile ( "SWI 0" );
-
+#define portYIELD() __asm volatile ( "SMC 0" )
 
 /*-----------------------------------------------------------
  * Critical section control
@@ -132,17 +136,26 @@ extern uint32_t ulPortYieldRequired;			\
 
 extern void vPortEnterCritical( void );
 extern void vPortExitCritical( void );
-extern uint32_t ulPortSetInterruptMask( void );
-extern void vPortClearInterruptMask( uint32_t ulNewMaskValue );
+extern UBaseType_t uxPortSetInterruptMask( void );
+extern void vPortClearInterruptMask( UBaseType_t uxNewMaskValue );
 extern void vPortInstallFreeRTOSVectorTable( void );
+
+#define portDISABLE_INTERRUPTS()									\
+	__asm volatile ( "MSR DAIFSET, #2" );							\
+	__asm volatile ( "DSB SY" );									\
+	__asm volatile ( "ISB SY" );
+
+#define portENABLE_INTERRUPTS()										\
+	__asm volatile ( "MSR DAIFCLR, #2" );							\
+	__asm volatile ( "DSB SY" );									\
+	__asm volatile ( "ISB SY" );
+
 
 /* These macros do not globally disable/enable interrupts.  They do mask off
 interrupts that have a priority below configMAX_API_CALL_INTERRUPT_PRIORITY. */
 #define portENTER_CRITICAL()		vPortEnterCritical();
 #define portEXIT_CRITICAL()			vPortExitCritical();
-#define portDISABLE_INTERRUPTS()	ulPortSetInterruptMask()
-#define portENABLE_INTERRUPTS()		vPortClearInterruptMask( 0 )
-#define portSET_INTERRUPT_MASK_FROM_ISR()		ulPortSetInterruptMask()
+#define portSET_INTERRUPT_MASK_FROM_ISR()		uxPortSetInterruptMask()
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(x)	vPortClearInterruptMask(x)
 
 /*-----------------------------------------------------------*/
@@ -188,7 +201,7 @@ void vPortTaskUsesFPU( void );
 #endif /* configASSERT */
 
 #define portNOP() __asm volatile( "NOP" )
-
+#define portINLINE __inline
 
 #ifdef __cplusplus
 	} /* extern C */
