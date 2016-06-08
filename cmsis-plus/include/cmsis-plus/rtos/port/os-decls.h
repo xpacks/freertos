@@ -43,6 +43,22 @@
 
 // ----------------------------------------------------------------------------
 
+#if !defined(OS_INTEGER_RTOS_MIN_STACK_SIZE_BYTES)
+#define OS_INTEGER_RTOS_MIN_STACK_SIZE_BYTES (256)
+#endif
+
+#if !defined(OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES)
+#define OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES (2048)
+#endif
+
+#if !defined(OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES)
+#define OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES (OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES)
+#endif
+
+#if !defined(OS_INTEGER_RTOS_IDLE_STACK_SIZE_BYTES)
+#define OS_INTEGER_RTOS_IDLE_STACK_SIZE_BYTES (OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES)
+#endif
+
 #ifdef  __cplusplus
 
 #include <cstdint>
@@ -66,10 +82,16 @@ namespace os
 
         // Currently not used by FreeRTOS.
         // Initial value for the minimum stack size in bytes.
-        constexpr std::size_t min_size_bytes = 128;
+        constexpr std::size_t min_size_bytes =
+        OS_INTEGER_RTOS_MIN_STACK_SIZE_BYTES;
 
         // Initial value for the default stack size in bytes.
-        constexpr std::size_t default_size_bytes = 2048;
+        constexpr std::size_t default_size_bytes =
+        OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES;
+
+        // Used to fill in the stack.
+        constexpr element_t magic = 0xEFBEADDE; // DEADBEEF
+
       } /* namespace stack */
 
       // ----------------------------------------------------------------------
