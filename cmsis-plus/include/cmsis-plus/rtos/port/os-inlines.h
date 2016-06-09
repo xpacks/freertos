@@ -124,34 +124,34 @@ namespace os
 #if 1
 
         inline void
-         __attribute__((always_inline))
-         lock (rtos::scheduler::status_t status)
-         {
-           if (status)
-             {
-               vTaskSuspendAll ();
-             }
-           else
-             {
-               xTaskResumeAll ();
-             }
-         }
+        __attribute__((always_inline))
+        lock (rtos::scheduler::status_t status)
+        {
+          if (status)
+            {
+              vTaskSuspendAll ();
+            }
+          else
+            {
+              xTaskResumeAll ();
+            }
+        }
 
 #else
 
         inline void
         __attribute__((always_inline))
         lock (void)
-        {
-          vTaskSuspendAll ();
-        }
+          {
+            vTaskSuspendAll ();
+          }
 
         inline void
         __attribute__((always_inline))
         unlock (void)
-        {
-          xTaskResumeAll ();
-        }
+          {
+            xTaskResumeAll ();
+          }
 
 #endif
 
@@ -323,7 +323,8 @@ namespace os
         __attribute__((always_inline))
         yield (void)
         {
-          taskYIELD();
+          taskYIELD()
+          ;
         }
 
         inline void
@@ -363,23 +364,26 @@ namespace os
       __attribute__((always_inline))
       thread::create (rtos::thread* obj)
       {
-        uint16_t stack_size_words = (uint16_t) (
+        StackType_t stack_size_words = (StackType_t) (
             obj->context_stack ().size () / (sizeof(StackType_t)));
-        if (stack_size_words < configMINIMAL_STACK_SIZE)
-          {
-            stack_size_words = configMINIMAL_STACK_SIZE;
-          }
+        // stack_size_words &= ~1;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
-        BaseType_t res;
-#pragma GCC diagnostic pop
+        assert(stack_size_words >= configMINIMAL_STACK_SIZE);
+
+        StackType_t* stack_address =
+            static_cast<StackType_t*> (obj->context_stack ().bottom ());
+
+        // Preserve the first stack word, to check the magic
+        // on thread termination.
+        stack_address++;
+        stack_size_words--;
 
         TaskHandle_t th;
-        res = xTaskCreate((TaskFunction_t ) rtos::thread::_invoke_with_exit,
-                          (const portCHAR *) obj->name (), stack_size_words,
-                          obj, makeFreeRtosPriority (obj->prio_), &th);
-        if (res == pdPASS)
+        th = xTaskCreateStatic (
+            (TaskFunction_t) rtos::thread::_invoke_with_exit,
+            (const portCHAR *) obj->name (), stack_size_words, obj,
+            makeFreeRtosPriority (obj->prio_), stack_address, &obj->port_.task);
+        if (th != NULL)
           {
             obj->func_result_ = nullptr;
 
@@ -389,10 +393,15 @@ namespace os
             // Store the pointer to this thread as index 0 in the FreeRTOS
             // local storage pointers.
             vTaskSetThreadLocalStoragePointer (th, 0, obj);
+#if defined(OS_TRACE_RTOS_THREAD)
+            trace::printf ("port::thread::%s @%p %s = %p\n", __func__, obj,
+                           obj->name (), th);
+#endif
+
           }
         else
           {
-            assert(res == pdPASS);
+            assert(th != NULL);
           }
       }
 
@@ -418,12 +427,13 @@ namespace os
       thread::destroy_other (rtos::thread* obj)
       {
         void* handle = obj->port_.handle;
-        // Remove the reference to the destroyed thread.
-        obj->port_.handle = nullptr;
-        trace::printf ("port::%s() vTaskDelete(%p)\n", __func__, handle);
-        assert(handle != nullptr);
-
-        vTaskDelete (handle);
+        if (handle != nullptr)
+          {
+            // Remove the reference to the destroyed thread.
+            obj->port_.handle = nullptr;
+            trace::printf ("port::%s() vTaskDelete(%p)\n", __func__, handle);
+            vTaskDelete (handle);
+          }
         // Does return
       }
 
@@ -440,7 +450,8 @@ namespace os
           {
             vTaskGenericResume (obj->port_.handle);
             // trace_putchar('^');
-            taskYIELD();
+            taskYIELD()
+            ;
           }
       }
 
@@ -464,7 +475,8 @@ namespace os
         vTaskPrioritySet (obj->port_.handle, makeFreeRtosPriority (prio));
 
         // The manual says it is done, but apparently still needed.
-        taskYIELD();
+        taskYIELD()
+        ;
 
         return result::ok;
       }
@@ -497,10 +509,10 @@ namespace os
           // actual period is known.
           // Note: args are passed as ID, this requires a small patch in
           // timers.c to pass the pointer back.
-          obj->port_.handle = xTimerCreate (
+          obj->port_.handle = xTimerCreateStatic (
               obj->name (), 1,
               obj->type_ == rtos::timer::run::once ? pdFALSE : pdTRUE,
-              (void*) args, (TaskFunction_t) function);
+              (void*) args, (TaskFunction_t) function, &obj->port_.timer);
 
           os_assert_throw (obj->port_.handle != NULL, ENOMEM);
         }
@@ -579,11 +591,13 @@ namespace os
         {
           if (obj->type_ == rtos::mutex::type::recursive)
             {
-              obj->port_.handle = xSemaphoreCreateRecursiveMutex ();
+              obj->port_.handle = xSemaphoreCreateRecursiveMutexStatic (
+                  &obj->port_.mutex);
             }
           else
             {
-              obj->port_.handle = xSemaphoreCreateMutex ();
+              obj->port_.handle = xSemaphoreCreateMutexStatic (
+                  &obj->port_.mutex);
             }
         }
 
@@ -775,8 +789,8 @@ namespace os
             {
               max = 1;
             }
-          obj->port_.handle = xSemaphoreCreateCounting(max,
-                                                       obj->initial_count_);
+          obj->port_.handle = xSemaphoreCreateCountingStatic (
+              max, obj->initial_count_, &obj->port_.semaphore);
         }
 
         inline static void
@@ -922,7 +936,9 @@ namespace os
         __attribute__((always_inline))
         create (rtos::message_queue* obj)
         {
-          obj->port_.handle = xQueueCreate(obj->msgs_, obj->msg_size_bytes_);
+          obj->port_.handle = xQueueCreateStatic (
+              obj->msgs_, obj->msg_size_bytes_,
+              static_cast<uint8_t*> (obj->queue_addr_), &obj->port_.queue);
         }
 
         inline static void
@@ -1101,7 +1117,7 @@ namespace os
         __attribute__((always_inline))
         create (rtos::event_flags* obj)
         {
-          obj->port_.handle = xEventGroupCreate ();
+          obj->port_.handle = xEventGroupCreateStatic (&obj->port_.flags);
         }
 
         inline static void
