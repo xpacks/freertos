@@ -41,7 +41,7 @@
 #ifndef CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_
 #define CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_
 
-#include <cmsis-plus/rtos/os-app-config.h>
+#include <cmsis-plus/os-app-config.h>
 #include <stdint.h>
 
 #include <FreeRTOS.h>
