@@ -78,38 +78,29 @@ namespace os
         {
           trace::printf ("FreeRTOS %s scheduler; preemptive.\n",
           tskKERNEL_VERSION_NUMBER);
-#if defined(OS_INCLUDE_RTOS_PORT_TIMER) \
-  || defined(OS_INCLUDE_RTOS_PORT_MUTEX) \
-  || defined(OS_INCLUDE_RTOS_PORT_SEMAPHORE) \
-  || defined(OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE) \
-  || defined(OS_INCLUDE_RTOS_PORT_EVENT_FLAGS)
+#if defined(OS_USE_RTOS_PORT_TIMER) \
+  || defined(OS_USE_RTOS_PORT_MUTEX) \
+  || defined(OS_USE_RTOS_PORT_SEMAPHORE) \
+  || defined(OS_USE_RTOS_PORT_MESSAGE_QUEUE) \
+  || defined(OS_USE_RTOS_PORT_EVENT_FLAGS)
           trace::printf ("Using FreeRTOS features:");
-#if defined(OS_INCLUDE_RTOS_PORT_TIMER)
+#if defined(OS_USE_RTOS_PORT_TIMER)
           trace::printf (" timer");
 #endif
-#if defined(OS_INCLUDE_RTOS_PORT_MUTEX)
+#if defined(OS_USE_RTOS_PORT_MUTEX)
           trace::printf (" mutex");
 #endif
-#if defined(OS_INCLUDE_RTOS_PORT_SEMAPHORE)
+#if defined(OS_USE_RTOS_PORT_SEMAPHORE)
           trace::printf (" semaphore");
 #endif
-#if defined(OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE)
+#if defined(OS_USE_RTOS_PORT_MESSAGE_QUEUE)
           trace::printf (" queue");
 #endif
-#if defined(OS_INCLUDE_RTOS_PORT_EVENT_FLAGS)
+#if defined(OS_USE_RTOS_PORT_EVENT_FLAGS)
           trace::printf (" flags");
 #endif
           trace::printf (".\n");
 #endif
-        }
-
-        inline bool
-        __attribute__((always_inline))
-        in_handler_mode (void)
-        {
-          // In Handler mode, IPSR holds the exception number.
-          // If 0, the core is in thread mode.
-          return (__get_IPSR () != 0);
         }
 
         [[noreturn]] inline void
@@ -165,6 +156,15 @@ namespace os
 
       namespace interrupts
       {
+        inline bool
+        __attribute__((always_inline))
+        in_handler_mode (void)
+        {
+          // In Handler mode, IPSR holds the exception number.
+          // If 0, the core is in thread mode.
+          return (__get_IPSR () != 0);
+        }
+
         // Enter an IRQ critical section
         inline rtos::interrupts::status_t
         __attribute__((always_inline))
@@ -179,7 +179,7 @@ namespace os
 
           return pri;
 #else
-          if (!scheduler::in_handler_mode ())
+          if (!interrupts::in_handler_mode ())
             {
               taskENTER_CRITICAL();
               return 0;
@@ -200,7 +200,7 @@ namespace os
 #if 0
           __set_BASEPRI (status);
 #else
-          if (!scheduler::in_handler_mode ())
+          if (!interrupts::in_handler_mode ())
             {
               taskEXIT_CRITICAL();
             }
@@ -302,7 +302,7 @@ namespace os
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_RTOS_PORT_SCHEDULER)
+#if defined(OS_USE_RTOS_PORT_SCHEDULER)
 
       namespace this_thread
       {
@@ -365,13 +365,13 @@ namespace os
       thread::create (rtos::thread* obj)
       {
         StackType_t stack_size_words = (StackType_t) (
-            obj->context_stack ().size () / (sizeof(StackType_t)));
+            obj->stack ().size () / (sizeof(StackType_t)));
         // stack_size_words &= ~1;
 
         assert(stack_size_words >= configMINIMAL_STACK_SIZE);
 
         StackType_t* stack_address =
-            static_cast<StackType_t*> (obj->context_stack ().bottom ());
+            static_cast<StackType_t*> (obj->stack ().bottom ());
 
         // Preserve the first stack word, to check the magic
         // on thread termination.
@@ -441,7 +441,7 @@ namespace os
       __attribute__((always_inline))
       thread::resume (rtos::thread* obj)
       {
-        if (rtos::scheduler::in_handler_mode ())
+        if (rtos::interrupts::in_handler_mode ())
           {
             BaseType_t must_yield = xTaskResumeFromISR (obj->port_.handle);
             portEND_SWITCHING_ISR(must_yield);
@@ -490,11 +490,11 @@ namespace os
 
       // --------------------------------------------------------------------
 
-#endif /* OS_INCLUDE_RTOS_PORT_SCHEDULER */
+#endif /* OS_USE_RTOS_PORT_SCHEDULER */
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_RTOS_PORT_TIMER)
+#if defined(OS_USE_RTOS_PORT_TIMER)
 
       class timer
       {
@@ -575,11 +575,11 @@ namespace os
         // --------------------------------------------------------------------
       };
 
-#endif /* OS_INCLUDE_RTOS_PORT_TIMER */
+#endif /* OS_USE_RTOS_PORT_TIMER */
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_RTOS_PORT_MUTEX)
+#if defined(OS_USE_RTOS_PORT_MUTEX)
 
       class mutex
       {
@@ -591,12 +591,12 @@ namespace os
         {
           if (obj->type_ == rtos::mutex::type::recursive)
             {
-              obj->port_.handle = xSemaphoreCreateRecursiveMutexStatic (
+              obj->port_.handle = xSemaphoreCreateRecursiveMutexStatic(
                   &obj->port_.mutex);
             }
           else
             {
-              obj->port_.handle = xSemaphoreCreateMutexStatic (
+              obj->port_.handle = xSemaphoreCreateMutexStatic(
                   &obj->port_.mutex);
             }
         }
@@ -758,11 +758,11 @@ namespace os
 
         // --------------------------------------------------------------------
       };
-#endif /* OS_INCLUDE_RTOS_PORT_MUTEX */
+#endif /* OS_USE_RTOS_PORT_MUTEX */
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_RTOS_PORT_CONDITION_VARIABLE)
+#if defined(OS_USE_RTOS_PORT_CONDITION_VARIABLE)
 
       class condition_variable
         {
@@ -770,11 +770,11 @@ namespace os
 
         };
 
-#endif /* OS_INCLUDE_RTOS_PORT_CONDITION_VARIABLE */
+#endif /* OS_USE_RTOS_PORT_CONDITION_VARIABLE */
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_RTOS_PORT_SEMAPHORE)
+#if defined(OS_USE_RTOS_PORT_SEMAPHORE)
 
       class semaphore
       {
@@ -789,7 +789,7 @@ namespace os
             {
               max = 1;
             }
-          obj->port_.handle = xSemaphoreCreateCountingStatic (
+          obj->port_.handle = xSemaphoreCreateCountingStatic(
               max, obj->initial_count_, &obj->port_.semaphore);
         }
 
@@ -812,7 +812,7 @@ namespace os
 #endif
           portBASE_TYPE thread_woken = pdFALSE;
 
-          if (rtos::scheduler::in_handler_mode ())
+          if (rtos::interrupts::in_handler_mode ())
             {
               if (xSemaphoreGiveFromISR(obj->port_.handle,
                   &thread_woken) != pdTRUE)
@@ -852,7 +852,7 @@ namespace os
         {
           portBASE_TYPE thread_woken = pdFALSE;
 
-          if (rtos::scheduler::in_handler_mode ())
+          if (rtos::interrupts::in_handler_mode ())
             {
               if (xSemaphoreTakeFromISR(obj->port_.handle,
                   &thread_woken) != pdTRUE)
@@ -910,11 +910,11 @@ namespace os
         // --------------------------------------------------------------------
       };
 
-#endif /* OS_INCLUDE_RTOS_PORT_SEMAPHORE */
+#endif /* OS_USE_RTOS_PORT_SEMAPHORE */
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_RTOS_PORT_MEMORY_POOL)
+#if defined(OS_USE_RTOS_PORT_MEMORY_POOL)
 
       class memory_pool
         {
@@ -922,11 +922,11 @@ namespace os
 
         };
 
-#endif /* OS_INCLUDE_RTOS_PORT_MEMORY_POOL */
+#endif /* OS_USE_RTOS_PORT_MEMORY_POOL */
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE)
+#if defined(OS_USE_RTOS_PORT_MESSAGE_QUEUE)
 
       class message_queue
       {
@@ -936,7 +936,7 @@ namespace os
         __attribute__((always_inline))
         create (rtos::message_queue* obj)
         {
-          obj->port_.handle = xQueueCreateStatic (
+          obj->port_.handle = xQueueCreateStatic(
               obj->msgs_, obj->msg_size_bytes_,
               static_cast<uint8_t*> (obj->queue_addr_), &obj->port_.queue);
         }
@@ -974,7 +974,7 @@ namespace os
         {
           portBASE_TYPE thread_woken = pdFALSE;
 
-          if (rtos::scheduler::in_handler_mode ())
+          if (rtos::interrupts::in_handler_mode ())
             {
               if (xQueueSendFromISR(obj->port_.handle, msg,
                   &thread_woken) != pdTRUE)
@@ -1045,7 +1045,7 @@ namespace os
         {
           portBASE_TYPE thread_woken = pdFALSE;
 
-          if (rtos::scheduler::in_handler_mode ())
+          if (rtos::interrupts::in_handler_mode ())
             {
               if (xQueueReceiveFromISR (obj->port_.handle, msg,
                                         &thread_woken) != pdTRUE)
@@ -1103,11 +1103,11 @@ namespace os
         // --------------------------------------------------------------------
       };
 
-#endif /* OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE */
+#endif /* OS_USE_RTOS_PORT_MESSAGE_QUEUE */
 
       // ======================================================================
 
-#if defined(OS_INCLUDE_RTOS_PORT_EVENT_FLAGS)
+#if defined(OS_USE_RTOS_PORT_EVENT_FLAGS)
 
       class event_flags
       {
@@ -1161,7 +1161,7 @@ namespace os
                   flags::mask_t* oflags, flags::mode_t mode)
         {
           EventBits_t bits;
-          if (rtos::scheduler::in_handler_mode ())
+          if (rtos::interrupts::in_handler_mode ())
             {
               bits = xEventGroupGetBitsFromISR (obj->port_.handle);
             }
@@ -1243,7 +1243,7 @@ namespace os
                flags::mask_t* oflags)
         {
           EventBits_t bits;
-          if (rtos::scheduler::in_handler_mode ())
+          if (rtos::interrupts::in_handler_mode ())
             {
               portBASE_TYPE thread_woken = pdFALSE;
 
@@ -1275,7 +1275,7 @@ namespace os
                flags::mask_t* oflags)
         {
           EventBits_t bits;
-          if (rtos::scheduler::in_handler_mode ())
+          if (rtos::interrupts::in_handler_mode ())
             {
               bits = xEventGroupClearBitsFromISR (obj->port_.handle, mask);
             }
@@ -1302,7 +1302,7 @@ namespace os
 
           // FreeRTOS reserves some bits for system usage.
           mask &= ~0xff000000UL;
-          if (rtos::scheduler::in_handler_mode ())
+          if (rtos::interrupts::in_handler_mode ())
             {
               bits = xEventGroupGetBitsFromISR (obj->port_.handle);
               if (mask == 0)
@@ -1350,12 +1350,69 @@ namespace os
         // --------------------------------------------------------------------
       };
 
-#endif /* OS_INCLUDE_RTOS_PORT_EVENT_FLAGS */
+#endif /* OS_USE_RTOS_PORT_EVENT_FLAGS */
 
-    // ======================================================================
+      // ======================================================================
 
-    }
-  /* namespace port */
+      inline void
+      __attribute__((always_inline))
+      clock_highres::start (void)
+      {
+        ;
+      }
+
+      inline uint32_t
+      __attribute__((always_inline))
+      clock_highres::input_clock_frequency_hz (void)
+      {
+        // The SysTick is clocked with the CPU clock.
+        return SystemCoreClock;
+      }
+
+      inline uint32_t
+      __attribute__((always_inline))
+      clock_highres::cycles_per_tick (void)
+      {
+        return SysTick->LOAD + 1;
+      }
+
+      inline uint32_t
+      __attribute__((always_inline))
+      clock_highres::cycles_since_tick (void)
+      {
+        uint32_t load_value = SysTick->LOAD;
+
+        // Initial sample of the decrementing counter.
+        // If this happens before the event, will be used as such.
+        uint32_t val = SysTick->VAL;
+
+        // Check overflow. If the exception is pending, it means that the
+        // interrupt occurred during this critical section and was not
+        // yet processed, so the total cycles count in steady_count_
+        // does not yet reflect the correct value and needs to be
+        // adjusted by one full cycle length.
+        if (SysTick->CTRL & SCB_ICSR_PENDSTSET_Msk)
+          {
+            // Sample the decrementing counter again to validate the
+            // initial sample.
+            uint32_t val_subsequent = SysTick->VAL;
+
+            // If the value did decrease, the timer did not recycle
+            // between the two reads; in other words, the interrupt
+            // occurred before the first read.
+            if (val > val_subsequent)
+              {
+                // The count must be adjusted with a full cycle.
+                return load_value + 1 + (load_value - val);
+              }
+          }
+
+        return load_value - val;
+      }
+
+    // ========================================================================
+
+    } /* namespace port */
   } /* namespace rtos */
 } /* namespace os */
 

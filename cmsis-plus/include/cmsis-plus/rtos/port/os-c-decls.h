@@ -52,7 +52,7 @@ typedef uint64_t os_port_clock_offset_t;
 
 typedef uint32_t os_port_irq_status_t;
 
-#if defined(OS_INCLUDE_RTOS_PORT_SCHEDULER)
+#if defined(OS_USE_RTOS_PORT_SCHEDULER)
 
 typedef struct os_thread_port_data_s
 {
@@ -60,9 +60,9 @@ typedef struct os_thread_port_data_s
   StaticTask_t task;
 } os_thread_port_data_t;
 
-#endif /* OS_INCLUDE_RTOS_PORT_SCHEDULER */
+#endif /* OS_USE_RTOS_PORT_SCHEDULER */
 
-#if defined(OS_INCLUDE_RTOS_PORT_TIMER)
+#if defined(OS_USE_RTOS_PORT_TIMER)
 
 typedef struct os_timer_port_data_s
 {
@@ -70,9 +70,9 @@ typedef struct os_timer_port_data_s
   StaticTimer_t timer;
 } os_timer_port_data_t;
 
-#endif /* OS_INCLUDE_RTOS_PORT_TIMER */
+#endif /* OS_USE_RTOS_PORT_TIMER */
 
-#if defined(OS_INCLUDE_RTOS_PORT_MUTEX)
+#if defined(OS_USE_RTOS_PORT_MUTEX)
 
 typedef struct os_mutex_port_data_s
 {
@@ -80,18 +80,18 @@ typedef struct os_mutex_port_data_s
   StaticSemaphore_t mutex;
 } os_mutex_port_data_t;
 
-#endif /* OS_INCLUDE_RTOS_PORT_MUTEX */
+#endif /* OS_USE_RTOS_PORT_MUTEX */
 
-#if defined(OS_INCLUDE_RTOS_PORT_CONDITION_VARIABLE)
+#if defined(OS_USE_RTOS_PORT_CONDITION_VARIABLE)
 
 typedef struct os_condvar_port_data_s
   {
     void* handle;
   }os_condvar_port_data_t;
 
-#endif /* OS_INCLUDE_RTOS_PORT_CONDITION_VARIABLE */
+#endif /* OS_USE_RTOS_PORT_CONDITION_VARIABLE */
 
-#if defined(OS_INCLUDE_RTOS_PORT_SEMAPHORE)
+#if defined(OS_USE_RTOS_PORT_SEMAPHORE)
 
 typedef struct os_semaphore_port_data_s
 {
@@ -101,16 +101,16 @@ typedef struct os_semaphore_port_data_s
 
 #endif
 
-#if defined(OS_INCLUDE_RTOS_PORT_MEMORY_POOL)
+#if defined(OS_USE_RTOS_PORT_MEMORY_POOL)
 
 typedef struct os_mempool_port_data_s
   {
     void* handle;
   }os_mempool_port_data_t;
 
-#endif /* OS_INCLUDE_RTOS_PORT_MEMORY_POOL */
+#endif /* OS_USE_RTOS_PORT_MEMORY_POOL */
 
-#if defined(OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE)
+#if defined(OS_USE_RTOS_PORT_MESSAGE_QUEUE)
 
 typedef struct os_mqueue_port_data_s
 {
@@ -118,9 +118,9 @@ typedef struct os_mqueue_port_data_s
   StaticQueue_t queue;
 } os_mqueue_port_data_t;
 
-#endif /* OS_INCLUDE_RTOS_PORT_MESSAGE_QUEUE */
+#endif /* OS_USE_RTOS_PORT_MESSAGE_QUEUE */
 
-#if defined(OS_INCLUDE_RTOS_PORT_EVENT_FLAGS)
+#if defined(OS_USE_RTOS_PORT_EVENT_FLAGS)
 
 typedef struct os_evflags_port_data_s
 {
@@ -128,6 +128,6 @@ typedef struct os_evflags_port_data_s
   StaticEventGroup_t flags;
 } os_evflags_port_data_t;
 
-#endif /* OS_INCLUDE_RTOS_PORT_EVENT_FLAGS */
+#endif /* OS_USE_RTOS_PORT_EVENT_FLAGS */
 
 #endif /* CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_ */
