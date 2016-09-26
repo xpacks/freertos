@@ -79,10 +79,10 @@ namespace os
       namespace stack
       {
         // Stack word.
-        using element_t = uint32_t;
+        using element_t = os_port_thread_stack_element_t;
 
         // Align stack to 8 bytes.
-        using allocation_element_t = uint64_t;
+        using allocation_element_t = os_port_thread_stack_allocation_element_t;
 
         // Currently not used by FreeRTOS.
         // Initial value for the minimum stack size in bytes.
@@ -94,7 +94,7 @@ namespace os
         OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES;
 
         // Used to fill in the stack.
-        constexpr element_t magic = 0xEFBEADDE; // DEADBEEF
+        constexpr element_t magic = OS_INTEGER_RTOS_STACK_FILL_MAGIC; // DEADBEEF
 
       } /* namespace stack */
 
@@ -102,11 +102,38 @@ namespace os
 
       namespace interrupts
       {
-        // Interrupts status.
-        using status_t = uint32_t;
+        // Type to store the entire processor interrupts mask.
+        using state_t = os_port_irq_state_t;
 
-        constexpr status_t init_status = 0;
+        namespace state
+        {
+          constexpr state_t init = 0;
+        } /* namespace state */
+
       } /* namespace interrupts */
+
+      namespace scheduler
+      {
+        using state_t = os_port_scheduler_state_t;
+
+        namespace state
+        {
+          constexpr state_t locked = true;
+          constexpr state_t unlocked = false;
+          constexpr state_t init = unlocked;
+        } /* namespace state */
+
+        extern state_t lock_state;
+
+      } /* namespace scheduler */
+
+      namespace statistics
+      {
+        using counter_t = uint64_t;
+
+        using duration_t = uint64_t;
+
+      } /* namespace statistics */
 
     // ----------------------------------------------------------------------
 

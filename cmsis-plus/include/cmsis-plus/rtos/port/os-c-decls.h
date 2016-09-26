@@ -43,6 +43,7 @@
 
 #include <cmsis-plus/os-app-config.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <FreeRTOS.h>
 
@@ -50,7 +51,23 @@ typedef uint64_t os_port_clock_timestamp_t;
 typedef uint32_t os_port_clock_duration_t;
 typedef uint64_t os_port_clock_offset_t;
 
-typedef uint32_t os_port_irq_status_t;
+typedef bool os_port_scheduler_state_t;
+
+typedef uint32_t os_port_irq_state_t;
+
+typedef uint32_t os_port_thread_stack_element_t;
+typedef uint64_t os_port_thread_stack_allocation_element_t;
+
+typedef struct
+{
+  os_port_thread_stack_element_t* stack_ptr;
+} os_port_thread_context_t;
+
+#define OS_INTEGER_RTOS_STACK_FILL_MAGIC (0xEFBEADDE)
+
+#define OS_HAS_INTERRUPTS_STACK
+
+// ----------------------------------------------------------------------------
 
 #if defined(OS_USE_RTOS_PORT_SCHEDULER)
 

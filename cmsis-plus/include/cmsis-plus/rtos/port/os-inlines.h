@@ -114,9 +114,34 @@ namespace os
 
 #if 1
 
+        inline port::scheduler::state_t
+        __attribute__((always_inline))
+        lock (void)
+        {
+          return locked (state::locked);
+        }
+
+        inline port::scheduler::state_t
+        __attribute__((always_inline))
+        unlock (void)
+        {
+          return locked (state::unlocked);
+        }
+
+        inline bool
+        __attribute__((always_inline))
+        locked (void)
+        {
+          // trace::printf("%s()=%d f%d\n", __func__, (xTaskGetSchedulerState() == taskSCHEDULER_SUSPENDED), xTaskGetSchedulerState());
+          return (xTaskGetSchedulerState() == taskSCHEDULER_SUSPENDED);
+        }
+
+#else
+#if 1
+
         inline void
         __attribute__((always_inline))
-        lock (rtos::scheduler::status_t status)
+        lock (rtos::scheduler::state_t status)
         {
           if (status)
             {
@@ -145,6 +170,7 @@ namespace os
           }
 
 #endif
+#endif
 
         inline void
         reschedule (void)
@@ -152,6 +178,29 @@ namespace os
           // Custom extension.
           vTaskPerformSuspend ();
         }
+
+        inline bool
+        preemptive(void)
+        {
+#if configUSE_PREEMPTION
+          return true;
+#else
+          return false;
+#endif
+        }
+
+        inline bool
+        preemptive(bool)
+        {
+          // TODO: set preemption flag
+
+#if configUSE_PREEMPTION
+          return true;
+#else
+          return false;
+#endif
+        }
+
       } /* namespace scheduler */
 
       namespace interrupts
@@ -166,7 +215,7 @@ namespace os
         }
 
         // Enter an IRQ critical section
-        inline rtos::interrupts::status_t
+        inline rtos::interrupts::state_t
         __attribute__((always_inline))
         critical_section::enter (void)
         {
@@ -195,7 +244,7 @@ namespace os
         inline void
         __attribute__((always_inline))
         critical_section::exit (
-            rtos::interrupts::status_t status __attribute__((unused)))
+            rtos::interrupts::state_t status __attribute__((unused)))
         {
 #if 0
           __set_BASEPRI (status);
@@ -214,7 +263,7 @@ namespace os
         // ====================================================================
 
         // Enter an IRQ uncritical section
-        inline rtos::interrupts::status_t
+        inline rtos::interrupts::state_t
         __attribute__((always_inline))
         uncritical_section::enter (void)
         {
@@ -241,7 +290,7 @@ namespace os
         inline void
         __attribute__((always_inline))
         uncritical_section::exit (
-            rtos::interrupts::status_t status __attribute__((unused)))
+            rtos::interrupts::state_t status __attribute__((unused)))
         {
 #if 1
           __set_BASEPRI (status);
@@ -287,14 +336,14 @@ namespace os
 
       inline void
       __attribute__((always_inline))
-      clock_systick::_interrupt_service_routine (void)
+      clock_systick::internal_interrupt_service_routine (void)
       {
         xPortSysTickHandler ();
       }
 
       inline void
       __attribute__((always_inline))
-      clock_rtc::_interrupt_service_routine (void)
+      clock_rtc::internal_interrupt_service_routine (void)
       {
         ;
       }
@@ -342,7 +391,11 @@ namespace os
       {
         unsigned portBASE_TYPE fr_prio = tskIDLE_PRIORITY;
 
+#if defined(OS_BOOL_RTOS_THREAD_IDLE_PRIORITY_BELOW_IDLE)
+        fr_prio += (priority - (rtos::thread::priority::idle - 1));
+#else
         fr_prio += (priority - rtos::thread::priority::idle);
+#endif
 
         return fr_prio;
       }
@@ -380,9 +433,9 @@ namespace os
 
         TaskHandle_t th;
         th = xTaskCreateStatic (
-            (TaskFunction_t) rtos::thread::_invoke_with_exit,
+            (TaskFunction_t) rtos::thread::internal_invoke_with_exit_,
             (const portCHAR *) obj->name (), stack_size_words, obj,
-            makeFreeRtosPriority (obj->prio_), stack_address, &obj->port_.task);
+            makeFreeRtosPriority (obj->prio_assigned_), stack_address, &obj->port_.task);
         if (th != NULL)
           {
             obj->func_result_ = nullptr;
@@ -457,20 +510,20 @@ namespace os
 
       inline rtos::thread::priority_t
       __attribute__((always_inline))
-      thread::sched_prio (rtos::thread* obj)
+      thread::priority (rtos::thread* obj)
       {
         UBaseType_t p = uxTaskPriorityGet (obj->port_.handle);
         rtos::thread::priority_t prio = makeCmsisPriority (p);
-        assert(prio == obj->prio_);
+        assert(prio == obj->prio_assigned_);
 
         return prio;
       }
 
       inline result_t
       __attribute__((always_inline))
-      thread::sched_prio (rtos::thread* obj, rtos::thread::priority_t prio)
+      thread::priority (rtos::thread* obj, rtos::thread::priority_t prio)
       {
-        obj->prio_ = prio;
+        obj->prio_assigned_ = prio;
 
         vTaskPrioritySet (obj->port_.handle, makeFreeRtosPriority (prio));
 
@@ -784,13 +837,13 @@ namespace os
         __attribute__((always_inline))
         create (rtos::semaphore* obj)
         {
-          UBaseType_t max = obj->max_count_;
+          UBaseType_t max = obj->max_value_;
           if (max == 0)
             {
               max = 1;
             }
           obj->port_.handle = xSemaphoreCreateCountingStatic(
-              max, obj->initial_count_, &obj->port_.semaphore);
+              max, obj->initial_value_, &obj->port_.semaphore);
         }
 
         inline static void
@@ -903,7 +956,7 @@ namespace os
           // TODO: Check if this properly resets a semaphore.
           xQueueReset(obj->port_.handle);
 
-          obj->count_ = obj->initial_count_;
+          obj->count_ = obj->initial_value_;
           return result::ok;
         }
 
