@@ -31,27 +31,58 @@
 
 #include <FreeRTOS.h>
 
-void
-vApplicationStackOverflowHook (void* task, const char* name);
+extern void
+os_rtos_idle_actions (void);
+
+extern "C"
+{
+
+  void
+  vApplicationStackOverflowHook (void* task, const char* name);
+
+  void
+  vApplicationIdleHook (void);
+
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+
+  void
+  vApplicationGetIdleTaskMemory (StaticTask_t **ppxIdleTaskTCBBuffer,
+                                 StackType_t **ppxIdleTaskStackBuffer,
+                                 uint32_t *pulIdleTaskStackSize);
+  void
+  vApplicationGetTimerTaskMemory (StaticTask_t **ppxTimerTaskTCBBuffer,
+                                  StackType_t **ppxTimerTaskStackBuffer,
+                                  uint32_t *pulTimerTaskStackSize);
+
+#endif /* ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
+}
 
 void
+__attribute__((weak))
 vApplicationStackOverflowHook (void* task, const char* name)
 {
   trace_printf (">>> Stack overflow %p '%s'!\n", task, name);
   abort ();
 }
 
-#if( configSUPPORT_STATIC_ALLOCATION == 1 )
+#if (configUSE_IDLE_HOOK == 0)
+#error configUSE_IDLE_HOOK must be 1
+#endif
 
 void
-vApplicationGetIdleTaskMemory (StaticTask_t **ppxIdleTaskTCBBuffer,
-                               StackType_t **ppxIdleTaskStackBuffer,
-                               uint32_t *pulIdleTaskStackSize);
+__attribute__((weak))
+vApplicationIdleHook (void)
+{
+  os_rtos_idle_actions ();
+}
+
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 
 static StaticTask_t idle_task;
 static StackType_t idle_stack[configIDLE_TASK_STACK_DEPTH];
 
 void
+__attribute__((weak))
 vApplicationGetIdleTaskMemory (StaticTask_t **ppxIdleTaskTCBBuffer,
                                StackType_t **ppxIdleTaskStackBuffer,
                                uint32_t *pulIdleTaskStackSize)
@@ -61,15 +92,11 @@ vApplicationGetIdleTaskMemory (StaticTask_t **ppxIdleTaskTCBBuffer,
   *pulIdleTaskStackSize = sizeof(idle_stack) / sizeof(StackType_t);
 }
 
-void
-vApplicationGetTimerTaskMemory (StaticTask_t **ppxTimerTaskTCBBuffer,
-                                StackType_t **ppxTimerTaskStackBuffer,
-                                uint32_t *pulTimerTaskStackSize);
-
 static StaticTask_t timer_task;
 static StackType_t timer_stack[configTIMER_TASK_STACK_DEPTH];
 
 void
+__attribute__((weak))
 vApplicationGetTimerTaskMemory (StaticTask_t **ppxTimerTaskTCBBuffer,
                                 StackType_t **ppxTimerTaskStackBuffer,
                                 uint32_t *pulTimerTaskStackSize)
@@ -79,4 +106,4 @@ vApplicationGetTimerTaskMemory (StaticTask_t **ppxTimerTaskTCBBuffer,
   *pulTimerTaskStackSize = sizeof(timer_stack) / sizeof(StackType_t);
 }
 
-#endif
+#endif /* ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
