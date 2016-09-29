@@ -63,7 +63,9 @@ typedef struct
   os_port_thread_stack_element_t* stack_ptr;
 } os_port_thread_context_t;
 
-#define OS_INTEGER_RTOS_STACK_FILL_MAGIC (0xEFBEADDE)
+// Must match the value used by FreeRTOS to fill the stack,
+// otherwise stack.available() will report a full stack.
+#define OS_INTEGER_RTOS_STACK_FILL_MAGIC (0xA5A5A5A5)
 
 #define OS_HAS_INTERRUPTS_STACK
 
