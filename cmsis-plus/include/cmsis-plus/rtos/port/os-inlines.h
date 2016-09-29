@@ -101,6 +101,10 @@ namespace os
 #endif
           trace::printf (".\n");
 #endif
+
+          // At this stage the system clock should have already been configured
+          // at high speed by __initialise_hardware().
+          trace::printf ("System clock: %u Hz.\n", SystemCoreClock);
         }
 
         [[noreturn]] inline void
@@ -111,8 +115,6 @@ namespace os
           for (;;)
             ;
         }
-
-#if 1
 
         inline port::scheduler::state_t
         __attribute__((always_inline))
@@ -136,47 +138,25 @@ namespace os
           return (xTaskGetSchedulerState() == taskSCHEDULER_SUSPENDED);
         }
 
-#else
-#if 1
-
-        inline void
-        __attribute__((always_inline))
-        lock (rtos::scheduler::state_t status)
-        {
-          if (status)
-            {
-              vTaskSuspendAll ();
-            }
-          else
-            {
-              xTaskResumeAll ();
-            }
-        }
-
-#else
-
-        inline void
-        __attribute__((always_inline))
-        lock (void)
-          {
-            vTaskSuspendAll ();
-          }
-
-        inline void
-        __attribute__((always_inline))
-        unlock (void)
-          {
-            xTaskResumeAll ();
-          }
-
-#endif
-#endif
-
         inline void
         reschedule (void)
         {
           // Custom extension.
           vTaskPerformSuspend ();
+        }
+
+        inline void
+        __attribute__((always_inline))
+        wait_for_interrupt (void)
+        {
+#if !defined(OS_EXCLUDE_RTOS_IDLE_SLEEP)
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
+          trace::printf ("%s() \n", __func__);
+#endif
+          // The DSB is recommended by ARM before WFI.
+          __DSB ();
+          __WFI ();
+#endif /* !defined(OS_EXCLUDE_RTOS_IDLE_SLEEP) */
         }
 
         inline bool
@@ -219,15 +199,6 @@ namespace os
         __attribute__((always_inline))
         critical_section::enter (void)
         {
-#if 0
-          // TODO: on M0 & M0+ cores there is no BASEPRI
-          uint32_t pri = __get_BASEPRI ();
-          __set_BASEPRI_MAX (
-              OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY
-              << ((8 - __NVIC_PRIO_BITS)));
-
-          return pri;
-#else
           if (!interrupts::in_handler_mode ())
             {
               taskENTER_CRITICAL();
@@ -237,7 +208,6 @@ namespace os
             {
               return portSET_INTERRUPT_MASK_FROM_ISR();
             }
-#endif
         }
 
         // Exit an IRQ critical section
@@ -246,9 +216,6 @@ namespace os
         critical_section::exit (
             rtos::interrupts::state_t status __attribute__((unused)))
         {
-#if 0
-          __set_BASEPRI (status);
-#else
           if (!interrupts::in_handler_mode ())
             {
               taskEXIT_CRITICAL();
@@ -257,7 +224,6 @@ namespace os
             {
               portCLEAR_INTERRUPT_MASK_FROM_ISR(status);
             }
-#endif
         }
 
         // ====================================================================
@@ -293,6 +259,7 @@ namespace os
             rtos::interrupts::state_t status __attribute__((unused)))
         {
 #if 1
+          // TODO: on M0 & M0+ cores there is no BASEPRI
           __set_BASEPRI (status);
 #else
           if (!scheduler::in_handler_mode ())
@@ -391,12 +358,11 @@ namespace os
       {
         unsigned portBASE_TYPE fr_prio = tskIDLE_PRIORITY;
 
-#if defined(OS_BOOL_RTOS_THREAD_IDLE_PRIORITY_BELOW_IDLE)
-        fr_prio += (priority - (rtos::thread::priority::idle - 1));
-#else
         fr_prio += (priority - rtos::thread::priority::idle);
+        ++fr_prio;
+#if defined(OS_BOOL_RTOS_THREAD_IDLE_PRIORITY_BELOW_IDLE)
+        ++fr_prio;
 #endif
-
         return fr_prio;
       }
 
@@ -404,6 +370,10 @@ namespace os
       makeCmsisPriority (unsigned portBASE_TYPE priority)
       {
         rtos::thread::priority_t cm_prio = rtos::thread::priority::idle;
+        --cm_prio;
+#if defined(OS_BOOL_RTOS_THREAD_IDLE_PRIORITY_BELOW_IDLE)
+        --cm_prio;
+#endif
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
@@ -447,8 +417,8 @@ namespace os
             // local storage pointers.
             vTaskSetThreadLocalStoragePointer (th, 0, obj);
 #if defined(OS_TRACE_RTOS_THREAD)
-            trace::printf ("port::thread::%s @%p %s = %p\n", __func__, obj,
-                           obj->name (), th);
+            trace::printf ("port::thread::%s()=%p @%p %s\n", __func__, th, obj,
+                           obj->name ());
 #endif
 
           }
@@ -466,7 +436,8 @@ namespace os
         void* handle = obj->port_.handle;
         // Remove the reference to the destroyed thread.
         obj->port_.handle = nullptr;
-        trace::printf ("port::%s() vTaskDelete(%p)\n", __func__, handle);
+        trace::printf ("port::thread::%s() @%p %s -> vTaskDelete(%p)\n", __func__, obj,
+                       obj->name (), handle);
 
         vTaskDelete (nullptr);
         assert(true);
@@ -484,7 +455,8 @@ namespace os
           {
             // Remove the reference to the destroyed thread.
             obj->port_.handle = nullptr;
-            trace::printf ("port::%s() vTaskDelete(%p)\n", __func__, handle);
+            trace::printf ("port::thread::%s() %p %s -> vTaskDelete(%p)\n", __func__, obj,
+                           obj->name (), handle);
             vTaskDelete (handle);
           }
         // Does return
@@ -523,9 +495,10 @@ namespace os
       __attribute__((always_inline))
       thread::priority (rtos::thread* obj, rtos::thread::priority_t prio)
       {
-        obj->prio_assigned_ = prio;
-
-        vTaskPrioritySet (obj->port_.handle, makeFreeRtosPriority (prio));
+        UBaseType_t fr_prio = makeFreeRtosPriority (prio);
+        trace::printf ("port::thread::%s() %p %s -> vTaskPrioritySet(%d)\n", __func__, obj,
+                       obj->name (), fr_prio);
+        vTaskPrioritySet (obj->port_.handle, fr_prio);
 
         // The manual says it is done, but apparently still needed.
         taskYIELD()
