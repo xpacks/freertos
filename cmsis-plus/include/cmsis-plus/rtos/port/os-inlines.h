@@ -1158,8 +1158,10 @@ namespace os
         wait (rtos::event_flags* obj, flags::mask_t mask, flags::mask_t* oflags,
               flags::mode_t mode)
         {
-          EventBits_t bits;
+          // FreeRTOS uses only 24 bits.
+          mask &= 0xFFFFFF;
 
+          EventBits_t bits;
           if (mask != 0)
             {
               bits = xEventGroupWaitBits (
@@ -1186,6 +1188,9 @@ namespace os
         try_wait (rtos::event_flags* obj, flags::mask_t mask,
                   flags::mask_t* oflags, flags::mode_t mode)
         {
+          // FreeRTOS uses only 24 bits.
+          mask &= 0xFFFFFF;
+
           EventBits_t bits;
           if (rtos::interrupts::in_handler_mode ())
             {
@@ -1235,8 +1240,10 @@ namespace os
                     clock::duration_t ticks, flags::mask_t* oflags,
                     flags::mode_t mode)
         {
-          EventBits_t bits;
+          // FreeRTOS uses only 24 bits.
+          mask &= 0xFFFFFF;
 
+          EventBits_t bits;
           if (ticks == 0)
             {
               ticks = 1;
@@ -1268,6 +1275,9 @@ namespace os
         raise (rtos::event_flags* obj, flags::mask_t mask,
                flags::mask_t* oflags)
         {
+          // FreeRTOS uses only 24 bits.
+          mask &= 0xFFFFFF;
+
           EventBits_t bits;
           if (rtos::interrupts::in_handler_mode ())
             {
@@ -1299,7 +1309,9 @@ namespace os
         __attribute__((always_inline))
         clear (rtos::event_flags* obj, flags::mask_t mask,
                flags::mask_t* oflags)
-        {
+        {          // FreeRTOS uses only 24 bits.
+          mask &= 0xFFFFFF;
+
           EventBits_t bits;
           if (rtos::interrupts::in_handler_mode ())
             {
@@ -1323,6 +1335,9 @@ namespace os
         __attribute__((always_inline))
         get (rtos::event_flags* obj, flags::mask_t mask, flags::mode_t mode)
         {
+          // FreeRTOS uses only 24 bits.
+          mask &= 0xFFFFFF;
+
           EventBits_t bits;
           flags::mask_t ret;
 
