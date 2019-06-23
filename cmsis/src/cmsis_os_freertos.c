@@ -1672,7 +1672,7 @@ osRecursiveMutexRelease (osMutexId mutex_id)
 }
 
 /**
- * @brief  Release a Recursive Mutex
+ * @brief Wait until a Recursive Mutex becomes available
  * @param   mutex_id    mutex ID obtained by \ref osRecursiveMutexCreate.
  * @param millisec      timeout value or 0 in case of no time-out.
  * @retval  status code that indicates the execution status of the function.
